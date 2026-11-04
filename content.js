@@ -1224,6 +1224,91 @@ var INTERVIEWS=[
    ]}
 ];
 
+;UNITS.push(unit("Data modeling at scale","Design data around how it is read and written, and survive skew.","db",[
+ lesson("Access patterns first","The query comes before the schema",[
+  mc("When designing the data model for a feature, what should you decide first?",["The access patterns: which queries will run and how often","The database brand","Whether to use UUIDs","The number of indexes"],"Indexes and tables serve queries. Name the reads and writes before choosing structures."),
+  mc("A screen shows a user profile and their five most recent orders. Which design avoids extra queries?",["Store the recent orders with the user, or in a table keyed by user","Keep every order in one global table sorted by time","Hash orders by order id only","Put the data in a CDN"],"Pre-compute and co-locate what a screen needs, then keep it fresh."),
+  match("Match each design choice to what it optimises for.",[["Denormalisation","Read speed by storing together"],["Normalisation","Avoiding duplicate writes"],["Secondary index","Finding by another field"],["Partition key","Spreading data across nodes"]],"Each speeds one access pattern and costs another."),
+  mc("Two services write the same record directly. What usually follows?",["Tight coupling and trouble evolving either service","Free consistency","Faster deploys","Smaller backups"],"Each service should own its data and exchange facts through APIs or events."),
+  order("Order the steps of adding a new read-heavy feature.",["List the queries and their frequency","Choose a table or index for each","Add load to a replica or cache and measure","Watch for hot keys and adjust"],"Measure the real access pattern before optimising.")
+ ]),
+ lesson("Hot keys and skew","When one item works harder than the rest",[
+  mc("A hot partition is…",["One shard receiving far more traffic than the others","A table with too many columns","A slow network cable","A read replica"],"Skew usually comes from choosing a low-cardinality or celebrity key."),
+  mc("A celebrity with millions of followers posts, and all writes target one user's timeline. Best first fix?",["Fan out the writes to follower shards, or split that user's data","Add more CPU to one shard","Make it eventually consistent only","Delete old posts"],"Scale the unit, or split the hot entity, rather than tuning around it."),
+  match("Match each symptom to a likely cause.",[["One shard maxed out","Hot key or bad partition key"],["Many small shards","Over-sharding"],["Uneven storage growth","Skew"],["Slow range query","Missing or wrong index"]],"Symptoms tell you which knob to turn."),
+  mc("What is a useful property of a partition key for sharding?",["High cardinality and roughly even distribution","Alphabetical order","The current date","A boolean flag"],"Hashing a high-cardinality id usually spreads evenly."),
+  mc("When does fan-out on write beat fan-out on read?",["Reads are far more frequent than writes, and followers are few to moderate","Writes dominate and followers are huge","Storage is infinite and free","Consistency does not matter"],"Choose based on the actual read-to-write ratio.")
+ ]),
+ lesson("Pagination and fan-out","Avoiding large, slow results",[
+  mc("Why is a large OFFSET slow in a big table?",["The database still scans and discards all earlier rows","It cannot use an index","It returns nothing","It locks the table"],"Cursor or keyset pagination jumps straight to the start point."),
+  mc("A robust feed API should usually…",["Use a cursor or seek key from the last item","Use OFFSET with LIMIT 100000","Load everything","Randomise order"],"Cursors are stable across inserts and cheap to resume."),
+  order("Order the flow of keyset pagination.",["Run the first query with a LIMIT","Take the last value as the cursor","Request the next page using the cursor","Stop when fewer than LIMIT rows return"],"No counted rows are skipped."),
+  mc("A request triggers 50 sub-requests to other services. What is the main risk?",["A slow or failing dependency stalls the whole response","CPU stays idle","Logs disappear","TLS breaks"],"Fan-out multiplies latency and failure. Keep call chains shallow and add timeouts."),
+  match("Match each term to its meaning.",[["Fan-out on read","Query and merge at request time"],["Fan-out on write","Precompute per follower on write"],["Cursor","Pointer to continue a list"],["Backfill","Recompute stored data after a change"]],"Each fan-out style trades write cost for read cost.")
+ ])
+]));
+add("13-2",[
+ tc("Access patterns are the spec","A good data model starts from questions, not tables. Write the reads and writes the product needs, then choose storage that makes those cheap. The same table can be ideal for one pattern and useless for another.",["Queries before schema.","Storage serves access.","Trade write cost for read cost."],"Design for the reads that happen at 3 a.m. during an incident."),
+ tc("Count and skew","Measure counts per key. If a few keys hold most of the traffic, split them, fan them out, or use separate handling. Averages hide skew, so look at the max and the top few.",["Check top keys.","Split hot entities.","Measure extremes."],"Most outages in data stores are skew-shaped."),
+ tc("Paginate deliberately","Deep OFFSET is a hidden full scan. Prefer keyset pagination on a monotonic column, and size pages by bytes or count with a cap. Return a cursor, not a page number, when data changes often.",["Avoid deep offsets.","Use cursors.","Cap page sizes."],"Page size is a performance decision.")
+]);
+;UNITS.push(unit("Resilience and backpressure","Survive bad dependencies without taking the whole system down.","shield",[
+ lesson("Timeouts, retries and jitter","Retrying safely",[
+  mc("What is the purpose of a timeout on an outbound call?",["Stop waiting for a slow or dead dependency so callers can fail fast or try elsewhere","Make it faster always","Increase throughput","Remove logging"],"Every network call needs a deadline."),
+  mc("Retrying an operation with no idempotency handling is risky because…",["It can apply the same effect twice, such as charging twice","It always fails","It makes logs smaller","It disables TLS"],"Make handlers idempotent before adding retries."),
+  mc("Why add jitter to exponential backoff?",["So many failed clients do not retry at exactly the same moment","To use more memory","To hide errors","To raise cache hit rates"],"Jitter desynchronises retry waves."),
+  match("Match each term to its role.",[["Timeout","Maximum wait before giving up"],["Backoff","Waiting longer after each failure"],["Jitter","Random delay to desynchronise"],["Retry budget","Cap on attempts or time"]],"Retries are a load multiplier if uncontrolled."),
+  order("Order a safe retry policy.",["Call fails with a timeout","Wait with backoff and jitter","Retry using the same idempotency key","Stop and alert after a maximum count"],"A limit is what prevents amplification.")
+ ]),
+ lesson("Circuit breakers and bulkheads","Isolating failure",[
+  mc("A circuit breaker in the open state…",["Stops calls to a failing dependency for a while to let it recover","Retries every request","Doubles traffic","Compresses responses"],"It fails fast and re-probes after a cooldown."),
+  match("Match each state to its meaning.",[["Closed","Calls pass normally"],["Open","Calls fail fast"],["Half-open","A few probe calls are allowed"],["Bulkhead","Isolated pool or resource per dependency"]],"Half-open is where recovery is tested."),
+  mc("What is a bulkhead for?",["Limiting how much of a shared resource one dependency can consume","Making logs prettier","Encrypting data","Removing indexes"],"Pools and semaphores stop one slow dependency eating all threads."),
+  mc("A user-facing request can still be useful when a dependency is down. The best pattern is…",["Serve a cached or degraded response and note it","Crash the whole request","Wait forever","Delete user data"],"Graceful degradation beats a hard failure."),
+  mc("Retrying inside every layer of a five-service chain is dangerous because…",["A single failure can be multiplied into a retry storm","It always improves latency","It removes the need for monitoring","It increases security"],"Retry at one layer, or coordinate with a retry budget.")
+ ]),
+ lesson("Load shedding","Protecting the core",[
+  mc("Load shedding means…",["Rejecting some work deliberately to keep the rest healthy","Restarting servers on a schedule","Turning off TLS","Dropping the database"],"Prefer rejecting early over failing everything."),
+  mc("Which traffic should usually be shed first under overload?",["Lowest priority or non-essential work, such as batch or background jobs","Paying users' reads","Health checks","Writes needed for money movement"],"Rank work by business impact and urgency."),
+  mc("A queue builds faster than consumers can drain it. What is the first question to ask?",["Can consumers be scaled or made cheaper, and is all queued work still needed","Should the queue be deleted","Should TTLs be raised","Should alerts be muted"],"Growing backlog is demand exceeding supply."),
+  mc("A health check reports healthy while the app is overloaded. What is wrong?",["The check only tests process liveness, not readiness to serve real load","TLS is off","The database is too small","Logs are missing"],"Readiness should reflect capacity to serve."),
+  match("Match each pattern to its use.",[["Load shedding","Reject excess work"],["Backpressure","Signal upstream to slow down"],["Dequeuing","Process queued work"],["Circuit breaker","Stop calling a failing dependency"]],"Combine them; no single control fixes overload.")
+ ])
+]));
+add("13-3",[
+ tc("Deadlines and propagation","Every call should carry a deadline, and downstream calls should inherit a smaller one. Otherwise a request can live far longer than the user is willing to wait.",["Timeouts on every hop.","Propagate deadlines.","Fail fast."],"A missing timeout is a silent outage multiplier."),
+ tc("Bulkheads and pools","Partition threads, connections and memory by dependency or tenant. If one dependency slows, only its pool fills; the rest of the service keeps working.",["Pools per dependency.","Limit queue sizes.","Protect the defaults."],"Isolation costs capacity, which is the point."),
+ tc("Load shedding","Shed non-critical work before critical work. Reject early with a clear status, return cached data, or queue for later. The goal is to stay correct for the requests you do serve.",["Rank by importance.","Reject early.","Keep critical paths clear."],"A controlled 503 is better than an uncontrolled timeout.")
+]);
+;UNITS.push(unit("Streams and queueing math","Queues and streams under real load, and what 'exactly once' really means.","mail",[
+ lesson("Queues under load","Keeping up",[
+  mc("Little's law says that, in a stable system, the average number of items in a queue equals…",["The arrival rate multiplied by the average time each spends in the system","The number of consumers","1 divided by the service rate","The total storage size"],"It is a simple way to relate backlog, throughput and latency."),
+  mc("If requests arrive faster than they are processed, what happens to the backlog?",["It grows over time","It stays at zero","It becomes negative","It is deleted automatically"],"Demand exceeding service capacity always accumulates work."),
+  mc("Consumer lag on a partition is…",["How far behind the writer the reader is","The time to reboot a consumer","A type of index","A compression algorithm"],"Lag tells you whether readers are keeping up."),
+  mc("A message keeps failing and re-queueing. What protects the rest of the queue?",["A dead-letter queue with bounded retries and alerting","Infinite retries","Deleting unrelated messages","Adding a CDN"],"Poison pills should leave the main path."),
+  match("Match each term to its meaning.",[["Arrival rate","Work entering per second"],["Service rate","Work completed per second"],["Backlog","Work waiting"],["Little's law","Backlog equals arrival times time in system"]],"These four numbers explain most queue incidents.")
+ ]),
+ lesson("Stream processing basics","Events as a log",[
+  mc("A stream processor groups events into windows. What is a window?",["A set of events considered together, such as all events in five minutes","A physical server","A CDN cache","A compiler"],"Windows turn an infinite stream into manageable chunks."),
+  mc("A watermark in stream processing is…",["An estimate of how far event time has progressed","A consumer's password","A database index","A deployment strategy"],"It lets the system decide when a window is complete."),
+  mc("Ordering in a Kafka-style log is guaranteed within…",["A single partition","The whole cluster","Any two topics","Nothing"],"Use a key so related events share a partition."),
+  mc("Why replay a stream from an earlier offset?",["To recompute results, rebuild a read model, or add a new consumer","To delete data","To speed up disks","To encrypt traffic"],"Logs keep history, which snapshots of state cannot."),
+  order("Order the processing of one event through a stream system.",["Producer appends to a partitioned log","Consumer reads its offset","Processing updates state or a read model","Offset is committed after success"],"Commit only after success to avoid losing work.")
+ ]),
+ lesson("Exactly once","What the claim really means",[
+  mc("'Exactly-once processing' in most systems is actually…",["At-least-once delivery plus idempotent handling of duplicates","A guarantee that no message is ever repeated","A slower network","A kind of hash"],"Delivery and processing guarantees are separate."),
+  mc("Where is an idempotency key best kept to spot duplicate writes?",["On the server, with the stored result, under a unique constraint","Only in client memory","In a log line","In DNS"],"The server must recognise a repeat and return the stored result."),
+  mc("What problem does the transactional outbox pattern solve?",["The gap between saving data and publishing an event, by writing both in one database transaction","Slow networks only","Missing indexes","Tight coupling of code"],"One transaction keeps data and the event together."),
+  mc("What happens if a consumer crashes before committing its offset?",["The same events are redelivered","The events are lost forever","The producer stops","Security fails"],"At-least-once delivery plus idempotent consumers is the usual answer."),
+  match("Match each property to where it is handled.",[["At-most-once delivery","Producer or broker side"],["At-least-once delivery","Broker side"],["Duplicate suppression","Consumer or sink side"],["End-to-end effect once","The whole pipeline"]],"Exactly-once is a pipeline property, not a transport flag.")
+ ])
+]));
+add("14-2",[
+ tc("Queueing discipline","Little's law is only the start. Capacity planning must include retries, which multiply load, and slow consumers, which inflate latency for everyone.",["Factor in retries.","Watch p99 latency.","Keep headroom."],"A stable average can coexist with an exploding tail."),
+ tc("Streams versus queues","A queue deletes after ack, and each message goes to one consumer. A log keeps events and can serve many consumers at their own pace.",["Queue: one consumer.","Log: many consumers, replay.","Choose by need."],"Retention and replay are why logs are powerful."),
+ tc("Exactly once, honestly","Transport-level at-least-once plus idempotent consumers gives end-to-end once. Avoid promising exactly-once unless you control every hop and sink.",["Be honest about guarantees.","Idempotent sinks.","Single transactional boundary helps."],"Marketing usually ignores the consumer.")
+]);
+
 UNITS.forEach(function(u,ui){u.lessons.forEach(function(l,li){l.id=(ui+1)+"-"+(li+1);l.ui=ui;l.li=li;});});
 var FLAT=[];UNITS.forEach(function(u){u.lessons.forEach(function(l){FLAT.push(l);});});
 PEND.forEach(function(p){
