@@ -145,7 +145,8 @@ function renderStep(){
       st.changes.map(function(c){return"<li>"+ic("plus")+esc(String(c).replace(/^\+\s*/,""))+"</li>";}).join("")+'</ul></div>';
   }
   if(st.scene&&st.scene.entities&&st.scene.entities.length){
-    h+='<div class="diagram"><div class="dg-hd"><span class="ch">Diagram</span></div>'+diagramSVG(st.scene)+'<div class="dg-cap">Boxes are parts. Arrows are requests or data.</div></div>';
+    var plot=st.scene.entities.filter(function(e){return e.type!=="panel";});
+    if(plot.length)h+='<div class="diagram"><div class="dg-hd"><span class="ch">Diagram</span></div>'+diagramSVG(st.scene)+'<div class="dg-cap">Boxes are parts. Arrows are requests or data.</div></div>';
   }
   if(st.scene&&st.scene.entities){
     var panels=st.scene.entities.filter(function(e){return e.type==="panel";});

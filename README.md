@@ -1,8 +1,8 @@
 # Boxes & Arrows
 
-A mobile-first, no-backend course for learning system design — **40 step-by-step lessons**
-rebuilt from the [designed-to-scale](https://designed-to-scale.vercel.app/) course, drawn as
-boxes and arrows.
+A mobile-first, no-backend course for learning system design — **43 step-by-step lessons**
+(40 rebuilt from the [designed-to-scale](https://designed-to-scale.vercel.app/) course, plus a
+3-lesson **Design Judgement** unit), drawn as boxes and arrows.
 
 Everything runs in the browser. There is no server, no build step, no AI service and no
 test suite. Progress is stored in `localStorage`.
@@ -11,9 +11,12 @@ test suite. Progress is stored in `localStorage`.
 
 - `index.html` — page shell, SVG icon symbols, cache-busted `<script>`/`<link>` tags.
 - `styles.css` — all styling (mobile-first, light/dark).
-- `course.js` — the course data as plain globals: `COURSE_UNITS` (9 units) and
+- `course.js` — the core course data as plain globals: `COURSE_UNITS` (9 units) and
   `COURSE_LESSONS` (40 lessons, 445 steps). Each step carries `short`, `chapter`,
   `title`, `body`, `callout`, `changes` and a `scene` (entities + links for the diagram).
+- `course-judgement.js` — unit 10, **Design Judgement** (3 lessons, 24 steps). Loaded after
+  `course.js` and before `app.js`; pushes onto the same `COURSE_UNITS` / `COURSE_LESSONS`
+  globals, so the app needs no changes to render it.
 - `app.js` — the whole app in one IIFE. Reads the globals from `course.js`.
 - `vercel.json` — static hosting + security headers (CSP).
 - `legacy/` — the previous Boxes & Arrows app (question banks, lab, cases, interviews),
@@ -39,9 +42,10 @@ rather than hand-editing `course.js`.
 
 ## Conventions
 
-- `content.js`-style globals load before `app.js`; keep the script order in `index.html`.
-- Bump the `?v=` query on `styles.css` / `course.js` / `app.js` in `index.html` after
-  editing them, so cached copies invalidate.
+- `course.js` and `course-judgement.js` globals load before `app.js`; keep the script order
+  in `index.html`.
+- Bump the `?v=` query on `styles.css` / `course.js` / `course-judgement.js` / `app.js` in
+  `index.html` after editing them, so cached copies invalidate.
 - CSP in `vercel.json` is `script-src 'self'` — no inline scripts, no `eval`, no network
   calls. All code stays in the served `.js` files.
 - Persistence is `localStorage` only, under `boxes-and-arrows-v3` (progress) and
