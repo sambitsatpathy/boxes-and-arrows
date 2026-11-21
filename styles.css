@@ -18,6 +18,7 @@
 
   --u1:#b98a2f; --u2:#3a9a3f; --u3:#7c5cdb; --u4:#d9532b; --u5:#1478d4;
   --u6:#0d9488; --u7:#d9467f; --u8:#6f8f1a; --u9:#4a5fd4; --u10:#9a6a3a;
+  --u11:#2b7a9e; --u12:#7a5c9e;
 
   --radius:16px;
   --tap:48px;
@@ -32,6 +33,7 @@
     --gold:#ffc233; --on-gold:#2e2000;
     --u1:#d9a94a; --u2:#5bc061; --u3:#9a80f5; --u4:#ff8a5c; --u5:#3d9bff;
     --u6:#2cc4b2; --u7:#f06a9f; --u8:#a3c63a; --u9:#7b8cf5; --u10:#d9a06a;
+    --u11:#4fc3f7; --u12:#b39ddb;
     color-scheme:dark;
   }
 }
@@ -44,6 +46,7 @@
   --gold:#ffc233; --on-gold:#2e2000;
   --u1:#d9a94a; --u2:#5bc061; --u3:#9a80f5; --u4:#ff8a5c; --u5:#3d9bff;
   --u6:#2cc4b2; --u7:#f06a9f; --u8:#a3c63a; --u9:#7b8cf5; --u10:#d9a06a;
+  --u11:#4fc3f7; --u12:#b39ddb;
   color-scheme:dark;
 }
 

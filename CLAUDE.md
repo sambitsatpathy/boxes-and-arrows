@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Boxes & Arrows is a static, no-backend, no-build course app for learning system design. Everything runs in the browser: lessons with question banks, an architecture lab, guided design cases, mock interviews, and progress (localStorage). There is no server, no AI service, no bundler, and no test suite.
+Boxes & Arrows is a static, no-backend, no-build course app for learning system design.
+Everything runs in the browser: a home "course map" of units, and a step-by-step lesson
+walker where each step is a short walkthrough with a boxes-and-arrows SVG diagram.
+Progress is stored in `localStorage`. There is no server, no AI service, no bundler and no
+test suite. 53 lessons across 12 units.
 
 ## Commands
 
@@ -15,62 +19,81 @@ npx serve .
 # or: python3 -m http.server 8080
 ```
 
-The app can also be opened directly with `open index.html` (some browser features differ, but it works).
+The app can also be opened directly with `open index.html`. Deploy on Vercel: framework
+preset "Other", no build command, output directory `.`. Any static host works.
 
-Deploy on Vercel: framework preset "Other", no build command, output directory `.`. Any static host works.
-
-```sh
-npx vercel
-```
-
-Syntax-check the two scripts (no tests exist):
+Syntax-check the scripts (no tests exist):
 
 ```sh
-node --check app.js && node --check content.js
+node --check app.js && node --check course.js && node --check course-judgement.js && node --check course-enhance.js
 ```
 
-There is no lint or build step. Changes appear on a browser refresh. Asset URLs in `index.html` carry cache-busting query strings (`?v=...`); bump them when editing `styles.css`, `content.js`, or `app.js` so cached copies are invalidated.
+There is no lint or build step. Changes appear on a browser refresh. Asset URLs in
+`index.html` carry cache-busting query strings (`?v=...`); bump them when editing a file so
+cached copies are invalidated.
 
 ## Architecture
 
 **Files and ownership**
 
 - `index.html` — page shell, SVG icon symbols, cache-busted `<script>`/`<link>` tags, noscript fallback.
-- `styles.css` — all styling.
-- `content.js` — all course data as plain globals; must load before `app.js` (it is loaded first in `index.html`). Defines `UNITS`, `BUILDS`, `CASES`, `INTERVIEWS`, plus helpers `mc`/`order`/`match`/`lesson`/`unit` and `tc` (teaching concept).
-- `app.js` — the entire application in one IIFE. Reads the globals from `content.js`.
+- `styles.css` — all styling (mobile-first, light/dark). Unit accents are CSS vars `--u1` … `--u12`,
+  defined in the light `:root`, the `prefers-color-scheme:dark` block, and the
+  `:root[data-theme="dark"]` block — update all three when adding a unit.
+- `course.js` — core course data as plain globals: `COURSE_UNITS` (9 units) and
+  `COURSE_LESSONS` (40 lessons). Extracted from the designed-to-scale bundle; prefer
+  re-extraction over hand-editing.
+- `course-judgement.js` — unit 10 (Design Judgement, 3 lessons). Pushes onto the same globals.
+- `course-enhance.js` — units 11–12 (Networking & the Edge; Patterns & Data Modelling, 10 lessons).
+  Pushes onto the same globals.
+- `app.js` — the entire application in one IIFE. Reads `COURSE_UNITS` / `COURSE_LESSONS`.
 - `vercel.json` — static hosting + security headers (CSP). Keep changes CSP-compatible.
 
-**Data model (content.js)**
+**Script order matters:** `course.js` → `course-judgement.js` → `course-enhance.js` → `app.js`.
+The course files mutate the globals; `app.js` reads them at load. Adding a unit = push a unit
+object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`, define `--uN` in `styles.css`.
 
-- `UNITS` is an array of `unit(title, blurb, icon, lessons)`; each `lesson(title, sub, ex)` has `ex`, an array of question objects (`mc`, `order`, `match`).
-- Teaching concepts (`tc(h, p, pts, key)`) and extra questions are attached after the fact via `add(id, teach, more)` (pushed to `PEND`), which merges into the matching lesson by id after `FLAT` is built.
-- IDs are assigned at the end of `content.js`: `l.id = ui+1 + "-" + li+1` (e.g. `"1-2"`), plus `l.ui`, `l.li`.
-- `FLAT` is the flat list of all lessons in unit order; it defines global lesson order and the unlock chain (`unlocked()` requires the previous lesson in `FLAT` to be done).
-- `BUILDS`, `CASES`, `INTERVIEWS` follow the same global-array + `...Of(id)` lookup pattern.
+**Data model (course files)**
+
+- `COURSE_UNITS` is an array of `{id, num, title, color, lessons:[{id,title}]}`. `num` is the
+  display number; the home page colours a unit with `--uc:var(--u<index+1>)`.
+- `COURSE_LESSONS[id]` is `{id, title, summary, minutes, level, goals:[{text,step}], steps:[...]}`.
+- Each step: `{short, chapter, title, body:[htmlStrings], callout:{kind,text}|null,
+  changes:[strings]|null, scene:{entities,links}|null}`.
+  - `chapter` ∈ setup / technique / problem / insight / tradeoff / recap (drives the chip colour).
+  - `callout.kind` ∈ insight / tip / warn / next.
+  - `body` strings may contain HTML: `<span class="term">`, `<code>`, `<b>`, `<em>`,
+    `<ul class="takeaways">`, `<table class="compare">`.
+- `scene.entities`: `{k, type, x, y, color, label, sub, tags}`. `type` ∈ device / block / db /
+  queue / crowd / zone / panel. `crowd`/`zone` use `x0,x1,y0,y1` instead of `x,y`.
+  `panel` entities are rendered as separate cards below the diagram (not inside the SVG).
+- `scene.links`: `{from, to, heads, label}`. `heads` ∈ end / both. The renderer draws straight
+  lines between entity centres; `pts`/`style` are ignored. Every `from`/`to` must match an
+  entity `k` in the same scene.
+- `diagramSVG` auto-scales coordinates to a 360×258 viewBox; coordinates are arbitrary units.
+  A scene with only `panel` entities renders no SVG (just the panel cards).
 
 **App state (app.js)**
 
-- Single global save state `S`, loaded from `localStorage` key `"boxes-and-arrows-v2"`, schema from `fresh()`. Persisted with `save()`. Tracks XP, streak, daily XP, per-lesson done/seen, lab bests, cases, interview bests/runs.
-- View/routing is a string (`view`) among `path`, `notes`, `lesson`, `complete`, `failed`, `build`, `cases`, `interview`, `progress`; `go(tab)` dispatches to renderers, each of which rebuilds `app.innerHTML` from templates.
-- UI is event-driven by delegation: one click listener on `#app` reads `data-act` and dispatches to handlers (`extra()` for tab/lab/case/interview actions); keyboard shortcuts handled separately.
-- Rendering helpers: `topBar()`, `navBar()`, `esc()`, `paras()`.
-
-**Feature modules (all inside the app.js IIFE)**
-
-- Path/lessons (`renderPath`, `startLesson`, `prep`, `check`, `next`, `complete`, `failed`): three question types mc/order/match, 5 hearts, retry queue, teaching cards before questions, seen-tracking so repeated practice covers the whole bank (`SET=10` drawn per run).
-- Build lab (`LAB`): per-scenario canvas state (`LAB.per[id]` with nodes/edges/res), seed layout, mode move/connect/erase, scoring via `runCheck` over `sc.checks` (links/min/any/connected), awards XP only for new best per scenario.
-- Cases (`CS`): sequential decision steps, first-try correctness, summary/trade-offs.
-- Interview (`IV`): 20-minute countdown (`startTimer`/`tickT`), 5 stages, self-ticked rubric points, scored 0–100, stopped on navigation.
-- Progress (`renderProgress`): mastery, weakest unit pick, records.
+- `S = {done:{lessonId:true}, step:{lessonId:stepIndex}}`, loaded from `localStorage` key
+  `"boxes-and-arrows-v3"`; theme from `"boxes-and-arrows-theme"`. Persisted with `save()`.
+- `view` is `"home"` or `"lesson"`; `current = {unit, lesson, step}`. `render()` dispatches to
+  `renderHome()` / `renderStep()`, each rebuilding `app.innerHTML` from HTML strings.
+- UI is event-driven by delegation: one click listener on `#app` reads `data-act`
+  (`open`, `home`, `next`, `back`, `theme`, `jump`). Keyboard: ←/→ step, Esc home, `t` theme.
+- Finishing the last step marks `S.done[lesson]=true` and returns home.
 
 **Rendering conventions**
 
-- Templates are plain HTML strings built with `+` concatenation; icons via `ic(name)` referencing the SVG symbols in `index.html`.
-- State mutations then re-render; no virtual DOM. After mutating `L`/`LAB`/`CS`/`IV`, call the relevant renderer so the DOM matches.
+- Templates are plain HTML strings built with `+` concatenation; icons via `ic(name)`
+  referencing the SVG symbols in `index.html`. Escape user-facing data with `esc()`.
+- State mutations then re-render; no virtual DOM.
 
 **Constraints to respect**
 
-- CSP in `vercel.json`: `script-src 'self'`, `connect-src 'none'`, `base-uri 'none'`, `form-action 'none'`. Do not add inline scripts, `eval`, network calls, or base-tag usage. All code must stay in the served `.js` files; external network is limited to fonts/stylesheets already declared. Progress and content are persisted only via `localStorage`, not a network API.
-- `localStorage` is the only persistence; `KEY="boxes-and-arrows-v2"`. Bumping storage shape should migrate via `Object.assign(fresh(), o)` semantics used in `load()`.
-- Content must load before app logic; maintain the `<script src="content.js">` then `<script src="app.js">` order in `index.html`.
+- CSP in `vercel.json`: `script-src 'self'`, `connect-src 'none'`, `base-uri 'none'`,
+  `form-action 'none'`. No inline scripts, `eval`, network calls or base-tag usage. All code
+  stays in the served `.js` files; external network is limited to the declared Google Fonts.
+- `localStorage` is the only persistence. Bumping the storage shape should migrate via the
+  `Object.assign({done:{},step:{}}, o)` semantics used in `load()`.
+- Keep the course-file → `app.js` script order in `index.html`.
