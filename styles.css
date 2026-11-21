@@ -203,3 +203,41 @@ button:disabled{cursor:not-allowed}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+
+/* ---------- Gamification: XP / hearts / streak ---------- */
+.s-streak .ic{color:var(--bad)}
+.s-heart .ic{color:var(--bad)}
+.s-xp .ic{color:var(--gold)}
+.chip.k-quiz{background:var(--gold);color:var(--on-gold);border-color:transparent}
+
+.notice{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border-radius:14px;
+  background:var(--bad-soft);color:var(--bad-fg);border:2px solid transparent;font:600 14px/1.4 var(--font-body)}
+.notice .ic{font-size:18px;flex:none}
+.notice span{flex:1;min-width:0}
+
+/* ---------- Quiz checkpoints ---------- */
+.quiz{display:grid;gap:14px}
+.q-q{font:800 21px/1.25 var(--font-display);letter-spacing:-.01em;text-wrap:balance}
+.q-opts{display:grid;gap:10px}
+.q-opt{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;width:100%;text-align:left;
+  min-height:var(--tap);padding:13px 14px;border-radius:14px;background:var(--surface);color:var(--fg);
+  border:2px solid var(--line-strong);border-bottom-width:4px;font:600 15.5px/1.35 var(--font-body)}
+.q-opt:active:not(:disabled){transform:translateY(2px);border-bottom-width:2px}
+.q-opt:disabled{cursor:default}
+.q-key{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:9px;background:var(--surface-2);
+  border:2px solid var(--line);font:700 13px var(--font-mono);color:var(--muted)}
+.q-t{min-width:0}
+.q-mark{font:800 18px/1 var(--font-display)}
+.q-opt.correct{background:var(--good-soft);border-color:var(--good);color:var(--good-fg)}
+.q-opt.correct .q-key{background:var(--good);border-color:var(--good);color:#fff}
+.q-opt.correct .q-mark{color:var(--good)}
+.q-opt.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad-fg)}
+.q-opt.wrong .q-key{background:var(--bad);border-color:var(--bad);color:#fff}
+.q-opt.wrong .q-mark{color:var(--bad)}
+.q-opt.dim{opacity:.55}
+.q-fb{display:grid;gap:6px;padding:14px 16px;border-radius:14px;border:2px solid transparent}
+.q-fb.good{background:var(--good-soft);color:var(--good-fg)}
+.q-fb.bad{background:var(--bad-soft);color:var(--bad-fg)}
+.q-fb-h{font:800 14px var(--font-display);letter-spacing:-.01em}
+.q-fb p{font-size:15px;line-height:1.5;margin:0}
+.q-hint{font-size:14px;color:var(--muted);text-align:center}

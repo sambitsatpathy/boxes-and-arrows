@@ -1,7 +1,8 @@
 # Boxes & Arrows
 
 A mobile-first, no-backend course for learning system design — **53 step-by-step lessons**
-across **12 units**, drawn as boxes and arrows.
+across **12 units**, drawn as boxes and arrows, with Duolingo-style quick-check quizzes,
+XP, hearts, streaks and a spaced **Review** mode.
 
 - **40 lessons** rebuilt from the [designed-to-scale](https://designed-to-scale.vercel.app/) course.
 - **Unit 10 · Design Judgement** (3 lessons) — synthesis lessons from the daily learning-drip series.
@@ -23,7 +24,9 @@ test suite. Progress is stored in `localStorage`.
 - `course-judgement.js` — unit 10, **Design Judgement** (3 lessons, 24 steps).
 - `course-enhance.js` — units 11–12, **Networking & the Edge** and **Patterns & Data Modelling**
   (10 lessons, 80 steps).
-- `app.js` — the whole app in one IIFE. Reads the globals from the course files.
+- `course-quizzes.js` — the quiz bank (`QUIZ_BANK`, 54 questions) plus one or two "Quick check"
+  steps injected into every lesson before its recap. Also feeds Review mode.
+- `app.js` — the whole app in one IIFE: course walker, quiz engine, XP/hearts/streak and Review.
 - `vercel.json` — static hosting + security headers (CSP).
 
 The three course files all push onto the same `COURSE_UNITS` / `COURSE_LESSONS` globals and
@@ -53,12 +56,25 @@ The app also opens straight from `index.html`. Deploy on Vercel with framework p
 ## Conventions
 
 - Course globals load before `app.js`; keep the script order in `index.html`
-  (`course.js` → `course-judgement.js` → `course-enhance.js` → `app.js`).
+  (`course.js` → `course-judgement.js` → `course-enhance.js` → `course-quizzes.js` → `app.js`).
 - Bump the `?v=` query on `styles.css` / `course.js` / `course-judgement.js` /
-  `course-enhance.js` / `app.js` in `index.html` after editing them, so cached copies invalidate.
+  `course-enhance.js` / `course-quizzes.js` / `app.js` in `index.html` after editing them, so
+  cached copies invalidate.
 - Adding a unit: push a unit object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`,
   and define its `--uN` accent in `styles.css` (light + both dark blocks).
 - CSP in `vercel.json` is `script-src 'self'` — no inline scripts, no `eval`, no network
   calls. All code stays in the served `.js` files.
-- Persistence is `localStorage` only, under `boxes-and-arrows-v3` (progress) and
-  `boxes-and-arrows-theme` (colour theme).
+- Persistence is `localStorage` only, under `boxes-and-arrows-v3` (progress, XP, hearts,
+  streak, quiz answers) and `boxes-and-arrows-theme` (colour theme).
+
+## Quizzes & gamification
+
+- Every lesson ends with one or two **Quick check** steps (`chapter:"quiz"`), injected by
+  `course-quizzes.js` just before the recap. A quiz step can't be skipped: the Next button
+  stays disabled until an answer is picked, then shows immediate feedback (correct/incorrect
+  plus a one-line why).
+- **XP**: +10 per correct answer. **Hearts**: start at 5, −1 per wrong answer, +1 per completed
+  lesson and per correct review answer. At 0 hearts the app diverts to Review until you refill.
+- **Streak**: one day counted per day with a completed lesson.
+- **Review** (home button): a 10-question spaced session drawn from lessons you have done
+  (all lessons if none yet), with its own answer store so it always re-asks.
