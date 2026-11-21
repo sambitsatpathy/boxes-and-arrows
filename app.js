@@ -248,10 +248,14 @@ function renderStep(){
   app.innerHTML=h;
   window.scrollTo(0,0);
 }
+function isAnswered(st){
+  if(!st||!st.quiz)return true;
+  return(curId==="__review__")?!!(reviewState&&reviewState.answers[st.qk]):!!S.quiz[st.qk];
+}
 function goNext(){
   var L=byId(curId);if(!L)return;
   var st=L.steps[step];
-  if(st&&st.quiz&&!S.quiz[st.qk]){notice="Pick an answer to continue.";renderStep();return;}
+  if(!isAnswered(st)){notice="Pick an answer to continue.";renderStep();return;}
   if(step+1<L.steps.length){step++;notice="";renderStep();}
   else finishLesson();
 }
