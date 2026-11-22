@@ -241,3 +241,43 @@ button:disabled{cursor:not-allowed}
 .q-fb-h{font:800 14px var(--font-display);letter-spacing:-.01em}
 .q-fb p{font-size:15px;line-height:1.5;margin:0}
 .q-hint{font-size:14px;color:var(--muted);text-align:center}
+
+/* ---------- Quiz mascot: Boxy ---------- */
+/* Sibling of #app so lesson re-renders cannot remove it. Docked to the same
+   640px column as the lessons, just above the fixed action bar. */
+.mascot-dock{position:fixed;left:50%;transform:translateX(-50%);width:min(640px,100%);
+  bottom:calc(78px + env(safe-area-inset-bottom,0px));height:118px;pointer-events:none;z-index:19}
+.mascot-slot{position:absolute;right:-20px;bottom:0;width:118px;height:118px;
+  transform:translateX(145%);transition:transform .55s cubic-bezier(.17,1.28,.4,1)}
+.mascot-slot.in{transform:translateX(0)}
+.mascot-slot.out{transform:translateX(150%);transition:transform .4s cubic-bezier(.5,0,.75,0)}
+.mascot-inner{width:100%;height:100%;transform-origin:60% 85%}
+.mascot-art{width:100%;height:100%;overflow:visible;display:block}
+.mascot-shadow{fill:var(--shadow);opacity:.22}
+.bx-box{fill:var(--accent);stroke:var(--accent-edge);stroke-width:3}
+.bx-ear,.bx-foot{fill:var(--accent-edge)}
+.bx-face{fill:var(--surface-2)}
+.bx-eye{fill:var(--fg)}
+.bx-line{fill:none;stroke:var(--fg);stroke-width:3.2;stroke-linecap:round}
+.bx-cheek{fill:#ff8a8a;opacity:0}
+.bx-sweat{fill:var(--accent-hi);opacity:0}
+.bx-spark{fill:var(--gold);opacity:0}
+.bx-sad{opacity:0}
+.mascot-inner.good .bx-eye{opacity:0}
+.mascot-inner.good .bx-happy{opacity:1}
+.mascot-inner.good .bx-cheek{opacity:.62}
+.mascot-inner.bad .bx-sad{opacity:1}
+.mascot-inner.bad .bx-eye{transform:scaleY(.62);transform-box:fill-box;transform-origin:center}
+.mascot-inner.bad .bx-idle-mouth{opacity:0}
+.mascot-inner.good .bx-body{animation:bx-hop .9s ease-out both,bx-bob 1.9s ease-in-out .9s infinite}
+.mascot-inner.bad .bx-body{animation:bx-wobble .75s ease-in-out both,bx-bob 2.2s ease-in-out .75s infinite}
+.mascot-inner.good .bx-spark{animation:bx-pop .55s ease-out .2s both}
+.mascot-inner.good .bx-spark path:nth-child(2){animation-delay:.3s}
+.mascot-inner.good .bx-spark path:nth-child(3){animation-delay:.4s}
+@keyframes bx-hop{0%{transform:translateY(0) scale(1)}24%{transform:translateY(-16px) scale(1.04,.95)}52%{transform:translateY(0) scale(.95,1.06)}74%{transform:translateY(-5px)}100%{transform:translateY(0)}}
+@keyframes bx-wobble{0%,100%{transform:rotate(0)}22%{transform:rotate(-8deg)}48%{transform:rotate(7deg)}72%{transform:rotate(-4deg)}}
+@keyframes bx-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes bx-pop{0%{transform:scale(.2) rotate(-30deg);opacity:0}55%{opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+/* Boxy peeks over the lower-right of the step; keep feedback copy out of its lane. */
+.q-fb{padding-right:104px}
+@media (max-width:380px){.q-fb{padding-right:88px}}

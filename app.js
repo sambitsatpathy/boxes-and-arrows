@@ -42,6 +42,24 @@ function addXp(n){S.xp=(S.xp||0)+n;save();}
 function loseHeart(){S.hearts=Math.max(0,hearts()-1);save();}
 function gainHeart(){S.hearts=Math.min(5,hearts()+1);save();}
 
+/* ---------- quiz mascot (Boxy) ---------- */
+var mascotTimer=null;
+function mascotHide(){
+  if(mascotTimer){clearTimeout(mascotTimer);mascotTimer=null;}
+  var slot=document.getElementById("mascot-slot"),inner=document.getElementById("mascot-inner");
+  if(slot)slot.classList.remove("in","out");
+  if(inner)inner.classList.remove("good","bad");
+}
+function mascotReact(ok){
+  var slot=document.getElementById("mascot-slot"),inner=document.getElementById("mascot-inner");
+  if(!slot||!inner)return;
+  mascotHide();
+  void slot.offsetWidth;
+  inner.classList.add(ok?"good":"bad");
+  slot.classList.add("in");
+  mascotTimer=setTimeout(function(){slot.classList.remove("in");slot.classList.add("out");mascotTimer=null;},2400);
+}
+
 /* ---------- course index ---------- */
 var FLAT=[];
 UNITS.forEach(function(u,ui){u.lessons.forEach(function(l,li){FLAT.push({id:l.id,ui:ui,li:li});});});
@@ -99,7 +117,7 @@ function noticeBar(){
 
 /* ---------- home ---------- */
 function renderHome(){
-  view="home";
+  view="home";mascotHide();
   var dc=doneCount(),pct=Math.round(dc/FLAT.length*100);
   var nxt=nextLesson();
   var h=topBar()+noticeBar()+'<div class="wrap hero">'+
@@ -188,6 +206,7 @@ function startLesson(id,ui){
   renderStep();
 }
 function renderStep(){
+  mascotHide();
   var L=byId(curId);if(!L){renderHome();return;}
   var st=L.steps[step],n=L.steps.length;
   var isReview=curId==="__review__";
@@ -289,16 +308,17 @@ function answer(i){
   var st=L.steps[step];if(!st||!st.quiz)return;
   var c=st.quiz.choices[i];if(!c)return;
   var isReview=curId==="__review__";
+  var ok=!!c.ok;
   if(isReview){
     if(!reviewState||reviewState.answers[st.qk])return;
-    reviewState.answers[st.qk]={picked:i,ok:!!c.ok};
-    if(c.ok){addXp(10);gainHeart();}else loseHeart();
+    reviewState.answers[st.qk]={picked:i,ok:ok};
+    if(ok){addXp(10);gainHeart();}else loseHeart();
   }else{
     if(S.quiz[st.qk])return;
-    S.quiz[st.qk]={picked:i,ok:!!c.ok};
-    if(c.ok)addXp(10);else loseHeart();
+    S.quiz[st.qk]={picked:i,ok:ok};
+    if(ok)addXp(10);else loseHeart();
   }
-  save();notice="";renderStep();
+  save();notice="";renderStep();mascotReact(ok);
 }
 function renderReviewDone(){
   view="reviewdone";

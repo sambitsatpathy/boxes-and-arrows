@@ -27,6 +27,7 @@ test suite. Progress is stored in `localStorage`.
 - `course-quizzes.js` — the quiz bank (`QUIZ_BANK`, 54 questions) plus one or two "Quick check"
   steps injected into every lesson before its recap. Also feeds Review mode.
 - `app.js` — the whole app in one IIFE: course walker, quiz engine, XP/hearts/streak and Review.
+- `mascot-concepts.html` — standalone ideation board with three animated mascot concepts (not loaded by the app).
 - `vercel.json` — static hosting + security headers (CSP).
 
 The three course files all push onto the same `COURSE_UNITS` / `COURSE_LESSONS` globals and
@@ -75,6 +76,12 @@ The app also opens straight from `index.html`. Deploy on Vercel with framework p
   plus a one-line why).
 - **XP**: +10 per correct answer. **Hearts**: start at 5, −1 per wrong answer, +1 per completed
   lesson and per correct review answer. At 0 hearts the app diverts to Review until you refill.
+- **Mascot**: Boxy, an inline-SVG box character, peeks in from the bottom-right for ~2.4s on every
+  answer (happy hop + sparks on correct, wobble + sweat on wrong). It lives in `.mascot-dock`, a
+  sibling of `#app` in `index.html`, so step re-renders cannot remove it. `answer()` in `app.js`
+  calls `mascotReact(ok)`; `renderStep()`/`renderHome()` call `mascotHide()`. The dock is
+  `pointer-events:none`, uses the same theme tokens as the rest of the app, and inherits the global
+  reduced-motion rule.
 - **Streak**: one day counted per day with a completed lesson.
 - **Review** (home button): a 10-question spaced session drawn from lessons you have done
   (all lessons if none yet), with its own answer store so it always re-asks.
