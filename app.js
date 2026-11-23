@@ -16,12 +16,20 @@ var BANK=(typeof QUIZ_BANK!=="undefined")?QUIZ_BANK:{};
 var REVIEW_N=10;
 
 /* ---------- state ---------- */
-function fresh(){return{done:{},last:null,xp:0,hearts:5,streak:0,lastDay:null,quiz:{}};}
+function fresh(){return{done:{},last:null,xp:0,hearts:5,streak:0,lastDay:null,quiz:{},exams:{}};}
 function load(){
-  try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&typeof o==="object")return Object.assign(fresh(),o);}}catch(e){}
-  return fresh();
+  var o=fresh();
+  try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);if(p&&typeof p==="object")o=Object.assign(fresh(),p);}}catch(e){}
+  /* One-time migration: a unit whose lessons are all complete counts as exam-passed.
+     Written back so it can never override a real attempt recorded later. */
+  o.exams=o.exams||{};
+  UNITS.forEach(function(u){
+    if(!o.exams[u.id]&&u.lessons.every(function(l){return o.done&&o.done[l.id];}))o.exams[u.id]={passed:true,migrated:true};
+  });
+  return o;
 }
 var S=load();
+save();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
@@ -43,6 +51,39 @@ function loseHeart(){S.hearts=Math.max(0,hearts()-1);save();}
 function gainHeart(){S.hearts=Math.min(5,hearts()+1);save();}
 
 /* ---------- quiz mascot (Boxy) ---------- */
+/* Boxy's art lives here, not in index.html, so the result card can reuse it.
+   Classes are split (.bx-ear top rects, .bx-pad foot pads, .bx-foot-l/r) so the
+   slump can rotate ears without swinging the feet. */
+var MASCOT_SUCCESS_CHANCE=0.45;
+var MASCOT_SVG=
+'<svg class="mascot-art" viewBox="0 0 140 140" focusable="false">'+
+  '<ellipse class="mascot-shadow" cx="70" cy="126" rx="34" ry="6"/>'+
+  '<g class="bx-body">'+
+    '<rect class="bx-ear bx-ear-l" x="50" y="16" width="12" height="14" rx="4"/>'+
+    '<rect class="bx-ear bx-ear-r" x="78" y="16" width="12" height="14" rx="4"/>'+
+    '<rect class="bx-box" x="30" y="28" width="80" height="76" rx="20"/>'+
+    '<rect class="bx-face" x="39" y="42" width="62" height="38" rx="12"/>'+
+    '<circle class="bx-eye" cx="55" cy="60" r="4.6"/>'+
+    '<circle class="bx-eye" cx="85" cy="60" r="4.6"/>'+
+    '<path class="bx-line bx-eye-sad" opacity="0" d="M49 63 q6 7 12 0 M79 63 q6 7 12 0"/>'+
+    '<path class="bx-line bx-happy" opacity="0" d="M49 60 q6 -8 12 0 M79 60 q6 -8 12 0"/>'+
+    '<path class="bx-line bx-idle-mouth" d="M62 70 q8 6 16 0"/>'+
+    '<path class="bx-line bx-sad" d="M62 72 q4 -5 8 0 t8 0"/>'+
+    '<circle class="bx-cheek" cx="47" cy="68" r="4"/>'+
+    '<circle class="bx-cheek" cx="93" cy="68" r="4"/>'+
+    '<path class="bx-line" d="M30 68 q-12 3 -14 -7 M110 68 q12 3 14 -7"/>'+
+    '<rect class="bx-foot bx-foot-l" x="46" y="100" width="13" height="18" rx="6"/>'+
+    '<rect class="bx-foot bx-foot-r" x="81" y="100" width="13" height="18" rx="6"/>'+
+    '<ellipse class="bx-pad" cx="52" cy="118" rx="10" ry="5"/>'+
+    '<ellipse class="bx-pad" cx="88" cy="118" rx="10" ry="5"/>'+
+    '<path class="bx-sweat bx-sad" d="M109 44 q7 9 0 13 q-7 -4 0 -13z"/>'+
+    '<g class="bx-spark">'+
+      '<path d="M22 34 q1.2 5 6 6 q-4.8 1 -6 6 q-1.2 -5 -6 -6 q4.8 -1 6 -6z"/>'+
+      '<path d="M112 24 q1.2 5 6 6 q-4.8 1 -6 6 q-1.2 -5 -6 -6 q4.8 -1 6 -6z"/>'+
+      '<path d="M118 56 q1 4 5 5 q-4 1 -5 5 q-1 -4 -5 -5 q4 -1 5 -5z"/>'+
+    '</g>'+
+  '</g>'+
+'</svg>';
 var mascotTimer=null;
 function mascotHide(){
   if(mascotTimer){clearTimeout(mascotTimer);mascotTimer=null;}
@@ -50,28 +91,68 @@ function mascotHide(){
   if(slot)slot.classList.remove("in","out");
   if(inner)inner.classList.remove("good","bad");
 }
-function mascotReact(ok){
+/* Failures always get Boxy. Wins are a surprise: MASCOT_SUCCESS_CHANCE of the time,
+   unless `force` (the lesson's last quiz step) guarantees the pop. */
+function mascotReact(ok,force){
+  if(ok&&!force&&Math.random()>=MASCOT_SUCCESS_CHANCE)return;
   var slot=document.getElementById("mascot-slot"),inner=document.getElementById("mascot-inner");
   if(!slot||!inner)return;
   mascotHide();
   void slot.offsetWidth;
   inner.classList.add(ok?"good":"bad");
   slot.classList.add("in");
-  mascotTimer=setTimeout(function(){slot.classList.remove("in");slot.classList.add("out");mascotTimer=null;},2400);
+  mascotTimer=setTimeout(function(){slot.classList.remove("in");slot.classList.add("out");mascotTimer=null;},ok?2400:2600);
 }
+function resultMascot(cls){return '<div class="mascot-inner '+cls+' result-mascot">'+MASCOT_SVG+'</div>';}
 
 /* ---------- course index ---------- */
 var FLAT=[];
 UNITS.forEach(function(u,ui){u.lessons.forEach(function(l,li){FLAT.push({id:l.id,ui:ui,li:li});});});
-var reviewLesson=null;
-function byId(id){return LESSONS[id]||(id==="__review__"?reviewLesson:null);}
+var reviewLesson=null, examLesson=null;
+function byId(id){return LESSONS[id]||(id==="__review__"?reviewLesson:(id.indexOf("__exam__")===0?examLesson:null));}
 function unitOf(ui){return UNITS[ui];}
 function doneCount(){return Object.keys(S.done).length;}
-function nextLesson(){for(var i=0;i<FLAT.length;i++){if(!S.done[FLAT[i].id])return FLAT[i];}return null;}
+/* Section gating. Unit 01 is open; unit N unlocks when unit N−1's exam is passed.
+   `unitExamPassed` reads only S.exams — the migration in load() backfills units that
+   were already finished before the gate existed, so completing lessons alone can
+   never unlock anything. */
+function unitDone(ui){var u=UNITS[ui];if(!u)return false;return u.lessons.every(function(l){return S.done[l.id];});}
+function unitExamPassed(ui){
+  var u=UNITS[ui];if(!u)return false;
+  return !!(S.exams&&S.exams[u.id]&&S.exams[u.id].passed);
+}
+function unitUnlocked(ui){return ui===0||unitExamPassed(ui-1);}
+function firstLockedUnit(){for(var i=0;i<UNITS.length;i++){if(!unitUnlocked(i))return i;}return -1;}
+function nextLesson(){
+  for(var i=0;i<FLAT.length;i++){var f=FLAT[i];if(!S.done[f.id]&&unitUnlocked(f.ui))return f;}
+  return null;
+}
+/* Section exam pool: every bank question in the unit. Questions already answered
+   correctly inline are dropped so the exam is not a rerun — but never below 2,
+   so a thin bank (e.g. Shipping's 2) still demands a real pass. */
+function examPool(ui){
+  var uid=UNITS[ui].id,full=[],filtered=[];
+  UNITS[ui].lessons.forEach(function(l){
+    var qs=BANK[l.id]||[];
+    qs.forEach(function(q,i){
+      var p={qk:"__exam__"+uid+"::"+l.id+"#"+i,srcQk:l.id+"#"+i,quiz:q};
+      full.push(p);
+      var a=S.quiz[p.srcQk];
+      if(!(a&&a.ok))filtered.push(p);
+    });
+  });
+  var pick=filtered.length>=2?filtered:full;
+  for(var i=pick.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pick[i];pick[i]=pick[j];pick[j]=t;}
+  return pick;
+}
+function examCount(ui){return examPool(ui).length;}
 
 var app=document.getElementById("app");
+var mascotInner=document.getElementById("mascot-inner");
+if(mascotInner)mascotInner.innerHTML=MASCOT_SVG;
 var view="home", curId=null, curUi=0, step=0;
 var reviewState=null;
+var lastResult=null;
 var notice="";
 
 /* ---------- theme ---------- */
@@ -87,12 +168,24 @@ function initTheme(){
   return t;
 }
 var theme=initTheme();
+/* The top bar's height isn't a constant (brand wraps, stats reflow), so measure it
+   into --top-h and let .lhead stack under it instead of painting over the stats. */
+function measureTop(){
+  var t=document.querySelector(".top");
+  if(t)document.documentElement.style.setProperty("--top-h",t.offsetHeight+"px");
+}
+function rerender(){
+  if(view==="lesson")renderStep();
+  else if(view==="result"){if(lastResult)renderResult(lastResult);else renderHome();}
+  else if(view==="reviewdone")renderReviewDone();
+  else renderHome();
+}
 function toggleTheme(){
   var cur=document.documentElement.getAttribute("data-theme");
   var next=(cur==="dark")?"light":"dark";
   theme=next;applyTheme(next);
   try{localStorage.setItem(THEME_KEY,next);}catch(e){}
-  if(view==="lesson")renderStep();else if(view==="reviewdone")renderReviewDone();else renderHome();
+  rerender();
 }
 
 /* ---------- shared chrome ---------- */
@@ -116,10 +209,23 @@ function noticeBar(){
 }
 
 /* ---------- home ---------- */
+function examBand(ui){
+  var u=UNITS[ui],unlocked=unitUnlocked(ui),passed=unitExamPassed(ui);
+  var n=examCount(ui);
+  var h='<div class="examband'+(unlocked?"":" locked")+'" style="--uc:var(--u'+(ui+1)+')"><div class="eb-in">';
+  if(!unlocked){
+    h+='<div class="eb-txt"><b>Section locked</b><span>Pass the previous section exam to unlock</span></div>';
+  }else{
+    h+='<div class="eb-txt"><b>Section exam'+(passed?' · passed':'')+'</b><span>'+n+' question'+(n===1?"":"s")+' · pass at 70%</span></div>';
+    h+='<button class="btn eb-btn" data-act="exam" data-ui="'+ui+'">'+ic(passed?"route":"flag")+(passed?"Retake":"Start exam")+'</button>';
+  }
+  return h+'</div></div>';
+}
 function renderHome(){
   view="home";mascotHide();
   var dc=doneCount(),pct=Math.round(dc/FLAT.length*100);
   var nxt=nextLesson();
+  var lockedUi=firstLockedUnit();
   var h=topBar()+noticeBar()+'<div class="wrap hero">'+
     '<div><span class="eyebrow">A system design course</span>'+
     '<h1>Learn how systems really work.</h1>'+
@@ -132,6 +238,8 @@ function renderHome(){
     }else{
       h+='<button class="btn wide" data-act="continue">'+ic("next")+' Continue: '+esc(byId(nxt.id).title)+'</button>';
     }
+  }else if(lockedUi>0){
+    h+='<button class="btn wide" data-act="exam" data-ui="'+(lockedUi-1)+'">'+ic("flag")+' Take the '+esc(UNITS[lockedUi-1].title)+' exam to unlock '+esc(UNITS[lockedUi].title)+'</button>';
   }else{
     h+='<p class="small">Course complete. Replay any lesson or review to keep it sharp.</p>';
   }
@@ -142,26 +250,32 @@ function renderHome(){
   UNITS.forEach(function(u,ui){
     var doneU=u.lessons.filter(function(l){return S.done[l.id];}).length;
     var p2=u.lessons.length?Math.round(doneU/u.lessons.length*100):0;
+    var unlocked=unitUnlocked(ui),passed=unitExamPassed(ui);
     h+='<section class="unit" style="--uc:var(--u'+(ui+1)+')">'+
       '<div class="unithd"><span class="num">'+u.num+'</span><h2>'+esc(u.title)+'</h2>'+
-      '<span class="bar"><i style="width:'+p2+'%"></i></span><span class="count">'+doneU+'/'+u.lessons.length+'</span></div>'+
+      '<span class="bar"><i style="width:'+p2+'%"></i></span><span class="count">'+doneU+'/'+u.lessons.length+'</span>'+
+      (passed?'<span class="passchip">'+ic("check")+'</span>':"")+
+      (unlocked?"":'<span class="lockchip">'+ic("lock")+'</span>')+'</div>'+
       '<div class="lessons">';
     u.lessons.forEach(function(l,li){
       var L=LESSONS[l.id];
       var done=!!S.done[l.id];
       var isnxt=nxt&&nxt.id===l.id;
-      h+='<button class="lrow'+(done?" done":"")+(isnxt?" next":"")+'" data-act="open" data-id="'+l.id+'" data-ui="'+ui+'">'+
+      var dis=!unlocked;
+      h+='<button class="lrow'+(done?" done":"")+(isnxt?" next":"")+(dis?" locked":"")+'" data-act="open" data-id="'+l.id+'" data-ui="'+ui+'"'+(dis?" disabled":"")+'>'+
         '<span class="idx">'+(li+1)+'</span>'+
         '<span class="tt"><b>'+esc(L.title)+'</b><span>'+L.minutes+' min · '+L.level+' · '+L.steps.length+' steps</span></span>'+
-        (done?ic("check"):'<svg class="ic caret"><use href="#i-next"/></svg>')+
+        (dis?ic("lock"):(done?ic("check"):'<svg class="ic caret"><use href="#i-next"/></svg>'))+
       '</button>';
     });
     h+='</div></section>';
+    h+=examBand(ui);
   });
   h+='</div>';
 
-  h+='<div class="wrap foot"><p class="small">Progress is saved in this browser. Quizzes earn XP; wrong answers cost a heart.</p></div>';
+  h+='<div class="wrap foot"><p class="small">Progress is saved in this browser. Quizzes earn XP; wrong answers cost a heart. Pass each section exam to unlock the next.</p></div>';
   app.innerHTML=h;
+  measureTop();
   window.scrollTo(0,0);
 }
 
@@ -201,8 +315,24 @@ function quizHTML(st){
 function startLesson(id,ui){
   if(hearts()<=0){notice="Out of hearts — answer review questions to refill.";startReview();return;}
   var L=byId(id);if(!L)return;
+  if(ui!==undefined&&!unitUnlocked(ui)){notice="Pass the previous section exam to unlock this section.";renderHome();return;}
   curId=id;curUi=(ui===undefined?0:ui);step=0;view="lesson";notice="";
   S.last=id;save();
+  renderStep();
+}
+function startExam(ui){
+  if(ui===undefined||!unitUnlocked(ui)){notice="Pass the previous section exam to unlock this section.";renderHome();return;}
+  var pick=examPool(ui);
+  if(!pick.length){notice="No questions for this section yet.";renderHome();return;}
+  var uid=UNITS[ui].id;
+  /* A retake must be a fresh attempt: answer() early-returns on an answered qk, so
+     drop this unit's previous exam answers or the old picks would replay. */
+  var pre="__exam__"+uid+"::";
+  Object.keys(S.quiz).forEach(function(k){if(k.indexOf(pre)===0)delete S.quiz[k];});
+  save();
+  examLesson={id:"__exam__"+uid,title:"Section exam",summary:UNITS[ui].title+" checkpoint.",minutes:5,level:"exam",goals:[],
+    steps:pick.map(function(p){return {short:"Exam",chapter:"quiz",title:"Section exam",qk:p.qk,quiz:p.quiz};})};
+  curId=examLesson.id;curUi=ui;step=0;view="lesson";notice="";
   renderStep();
 }
 function renderStep(){
@@ -265,7 +395,13 @@ function renderStep(){
   '</div></div>';
 
   app.innerHTML=h;
+  measureTop();
   window.scrollTo(0,0);
+}
+function isLastQuizStep(){
+  var L=byId(curId);if(!L)return false;
+  var last=null;L.steps.forEach(function(s){if(s.quiz)last=s.qk;});
+  return last!==null&&!!L.steps[step]&&L.steps[step].qk===last;
 }
 function isAnswered(st){
   if(!st||!st.quiz)return true;
@@ -281,7 +417,125 @@ function goNext(){
 function goPrev(){if(step>0){step--;notice="";renderStep();}}
 function finishLesson(){
   if(curId==="__review__"){renderReviewDone();return;}
-  S.done[curId]=true;gainHeart();bumpStreak();save();notice="";renderHome();
+  if(curId.indexOf("__exam__")===0){finishExam();return;}
+  var L=byId(curId);if(!L){renderHome();return;}
+  var qs=L.steps.filter(function(s){return s.quiz;});
+  var correct=0;
+  qs.forEach(function(s){var a=S.quiz[s.qk];if(a&&a.ok)correct++;});
+  S.done[curId]=true;gainHeart();bumpStreak();save();notice="";
+  /* A single-question quick check can't carry a meaningful 70% verdict (1/1 or 0/1),
+     so only multi-question lessons get a pass/fail card; the rest just complete. */
+  if(qs.length>=2){
+    renderResult({mode:"lesson",ui:curUi,lessonId:curId,title:L.title,correct:correct,total:qs.length,
+      missed:missedList(L,function(s){return S.quiz[s.qk];})});
+  }else renderHome();
+}
+function finishExam(){
+  var uid=curId.slice("__exam__".length);
+  var ui=-1;UNITS.forEach(function(u,i){if(u.id===uid)ui=i;});
+  var L=byId(curId);if(!L){renderHome();return;}
+  var qs=L.steps.filter(function(s){return s.quiz;});
+  var correct=0;
+  qs.forEach(function(s){var a=S.quiz[s.qk];if(a&&a.ok)correct++;});
+  var passed=qs.length>0&&correct*10>=qs.length*7;
+  if(!S.exams)S.exams={};
+  S.exams[uid]={passed:passed,correct:correct,total:qs.length};
+  save();notice="";
+  renderResult({mode:"exam",ui:ui,title:UNITS[ui]?UNITS[ui].title:"Section exam",correct:correct,total:qs.length,passed:passed,
+    missed:missedList(L,function(s){return S.quiz[s.qk];})});
+}
+function missedList(L,getAns){
+  var out=[];
+  L.steps.forEach(function(s){
+    if(!s.quiz)return;
+    var a=getAns(s);
+    if(a&&a.ok)return;
+    var correct=null;s.quiz.choices.forEach(function(c){if(c.ok)correct=c;});
+    out.push({q:s.quiz.q,right:correct?correct.t:"",picked:a?s.quiz.choices[a.picked].t:""});
+  });
+  return out;
+}
+function passLine(o){
+  if(o.mode==="exam")return "Section cleared — the next section is unlocked.";
+  if(o.mode==="review")return "Solid round. The ones you missed will come around again.";
+  return "Lesson complete. You kept the promises straight.";
+}
+function failLine(o){
+  if(o.mode==="exam")return "Not passed yet — "+o.correct+" of "+o.total+". Review the ones below and retake.";
+  if(o.mode==="review")return "A shaky round, but that is what review is for. Try again.";
+  return "A couple of quick checks slipped. Worth another pass before you move on.";
+}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+/* CSP-safe confetti: a canvas painted from app.js, no library, no inline script. */
+function confettiBurst(host,colors){
+  if(!host||!colors||!colors.length)return;
+  if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  var cv=document.createElement("canvas");cv.className="confetti";host.appendChild(cv);
+  var ctx=cv.getContext("2d");if(!ctx)return;
+  var r=host.getBoundingClientRect();
+  cv.width=Math.max(1,Math.round(r.width));cv.height=Math.max(1,Math.round(r.height));
+  var W=cv.width,H=cv.height,N=64,parts=[];
+  for(var i=0;i<N;i++){
+    parts.push({x:Math.random()*W,y:-20+Math.random()*H*0.5,w:5+Math.random()*6,h:8+Math.random()*9,
+      vy:1.6+Math.random()*3.2,vx:-1+Math.random()*2,rot:Math.random()*Math.PI,vr:-.12+Math.random()*.24,
+      c:colors[i%colors.length]});
+  }
+  var t0=performance.now(),DUR=1600;
+  function frame(t){
+    var el=t-t0;
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<parts.length;i++){
+      var p=parts[i];
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+      ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    }
+    if(el<DUR)requestAnimationFrame(frame);
+    else ctx.clearRect(0,0,W,H);
+  }
+  requestAnimationFrame(frame);
+}
+function resultHeadline(o,passed){
+  if(passed)return o.mode==="exam"?"Section passed":(o.mode==="review"?"Review complete":"Lesson complete");
+  return o.mode==="exam"?"Not yet — review and retry":(o.mode==="review"?"Not this round":"Not quite");
+}
+function renderResult(o){
+  view="result";lastResult=o;mascotHide();
+  /* Exams carry their own verdict; lessons and review are scored at the same 70%. */
+  var passed=(o.passed!==undefined)?!!o.passed:(o.total>0&&o.correct*10>=o.total*7);
+  var acc="var(--u"+((o.ui||0)+1)+")";
+  var h=topBar()+noticeBar()+'<div class="wrap lbody result-wrap'+(passed?"":" dim")+'" style="--uc:'+acc+'">';
+  h+='<div class="resultcard '+(passed?"win":"lose")+'" id="resultcard">';
+  h+='<div class="result-art">'+resultMascot(passed?"good":"bad")+'</div>';
+  h+='<div class="result-body">'+
+    '<span class="chip '+(passed?"k-solution":"k-problem")+'">'+ic(passed?"check":"flag")+'<span>'+
+      esc(resultHeadline(o,passed))+'</span></span>'+
+    '<h1 class="ltitle">'+o.correct+' / '+o.total+' correct</h1>'+
+    '<p class="prose">'+esc(passed?passLine(o):failLine(o))+'</p>'+
+  '</div>';
+  if(o.missed&&o.missed.length){
+    h+='<div class="missed"><span class="ch">Review these</span><ul>'+
+      o.missed.map(function(m){return '<li><b>'+esc(m.q)+'</b><span>Answer: '+esc(m.right)+'</span></li>';}).join("")+
+      '</ul></div>';
+  }
+  h+='<div class="result-actions">';
+  if(passed){
+    h+='<button class="btn good wide" data-act="continue">'+ic("next")+' Continue</button>';
+  }else if(o.mode==="exam"){
+    h+='<button class="btn wide" data-act="exam" data-ui="'+(o.ui||0)+'">'+ic("route")+' Retake exam</button>';
+  }else if(o.mode==="lesson"){
+    h+='<button class="btn wide" data-act="open" data-id="'+o.lessonId+'" data-ui="'+(o.ui||0)+'">'+ic("route")+' Replay lesson</button>';
+  }else{
+    h+='<button class="btn wide" data-act="review">'+ic("flame")+' Review again</button>';
+  }
+  h+='<button class="btn ghost wide" data-act="home">'+ic("boxes")+' Back to course</button>';
+  h+='</div>';
+  h+='</div></div>';
+  app.innerHTML=h;
+  measureTop();
+  window.scrollTo(0,0);
+  if(passed)confettiBurst(document.getElementById("resultcard"),[cssVar("--u"+((o.ui||0)+1)),cssVar("--gold")]);
 }
 
 /* ---------- review ---------- */
@@ -308,6 +562,7 @@ function answer(i){
   var st=L.steps[step];if(!st||!st.quiz)return;
   var c=st.quiz.choices[i];if(!c)return;
   var isReview=curId==="__review__";
+  var isExam=curId.indexOf("__exam__")===0;
   var ok=!!c.ok;
   if(isReview){
     if(!reviewState||reviewState.answers[st.qk])return;
@@ -316,25 +571,22 @@ function answer(i){
   }else{
     if(S.quiz[st.qk])return;
     S.quiz[st.qk]={picked:i,ok:ok};
-    if(ok)addXp(10);else loseHeart();
+    if(ok)addXp(10);
+    /* Exams award XP but never deduct hearts — they are the unlock path, so a
+       failed exam must not lock anyone out of the way forward. */
+    if(!ok&&!isExam)loseHeart();
   }
-  save();notice="";renderStep();mascotReact(ok);
+  save();notice="";
+  var force=ok&&!isReview&&isLastQuizStep();
+  renderStep();
+  mascotReact(ok,force);
 }
 function renderReviewDone(){
   view="reviewdone";
   var a=reviewState.answers,t=reviewState.total;
   var c=Object.keys(a).filter(function(k){return a[k]&&a[k].ok;}).length;
-  var h=topBar()+noticeBar()+'<div class="wrap lbody" style="--uc:var(--u1)">'+
-    '<div class="chiprow"><span class="chip k-insight">'+ic("flame")+'<span>Review complete</span></span></div>'+
-    '<h1 class="ltitle">'+c+' / '+t+' correct</h1>'+
-    '<p class="prose">'+(c===t?"Perfect round — nothing lost.":"Nice reps. The ones you missed will come around again.")+'</p>'+
-    '<div class="changes"><span class="ch">This round</span><ul>'+
-      '<li>'+ic("star")+' '+xp()+' XP</li>'+
-      '<li>'+ic("heart")+' '+hearts()+' hearts</li>'+
-      '<li>'+ic("flame")+' '+(S.streak||0)+' day streak</li></ul></div>'+
-    '<button class="btn wide" data-act="home">'+ic("boxes")+' Back to course</button>'+
-  '</div>';
-  app.innerHTML=h;window.scrollTo(0,0);
+  renderResult({mode:"review",ui:0,title:"Review",correct:c,total:t,
+    missed:missedList(reviewLesson,function(s){return a[s.qk];})});
 }
 
 /* ---------- diagram ---------- */
@@ -483,21 +735,29 @@ app.addEventListener("click",function(e){
   var t=e.target.closest("[data-act]");if(!t||!app.contains(t))return;
   var a=t.dataset.act;
   if(a==="theme"){toggleTheme();}
-  else if(a==="dismiss"){notice="";if(view==="lesson")renderStep();else if(view==="reviewdone")renderReviewDone();else renderHome();}
+  else if(a==="dismiss"){notice="";rerender();}
   else if(a==="home"){notice="";renderHome();}
   else if(a==="continue"){var n=nextLesson();if(n)startLesson(n.id,n.ui);}
   else if(a==="review"){notice="";startReview();}
   else if(a==="open"){startLesson(t.dataset.id,+t.dataset.ui);}
+  else if(a==="exam"){notice="";startExam(+t.dataset.ui);}
   else if(a==="answer"){answer(+t.dataset.i);}
   else if(a==="next"){goNext();}
   else if(a==="prev"){goPrev();}
 });
 document.addEventListener("keydown",function(e){
   if(view!=="lesson")return;
+  var L=byId(curId);if(!L)return;
+  var st=L.steps[step];
+  if(!e.metaKey&&!e.ctrlKey&&!e.altKey&&e.key>="1"&&e.key<="4"){
+    if(st&&st.quiz&&!isAnswered(st)){var i=+e.key-1;if(st.quiz.choices[i])answer(i);}
+    return;
+  }
   if(e.key==="ArrowRight"){e.preventDefault();goNext();}
   else if(e.key==="ArrowLeft"){e.preventDefault();goPrev();}
   else if(e.key==="Escape"){notice="";renderHome();}
 });
+window.addEventListener("resize",measureTop);
 
 renderHome();
 })();

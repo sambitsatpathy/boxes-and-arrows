@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Boxes & Arrows is a static, no-backend, no-build course app for learning system design.
 Everything runs in the browser: a home "course map" of units, and a step-by-step lesson
-walker where each step is a short walkthrough with a boxes-and-arrows SVG diagram.
-Progress is stored in `localStorage`. There is no server, no AI service, no bundler and no
-test suite. 53 lessons across 12 units.
+walker where each step is a short walkthrough with a boxes-and-arrows SVG diagram. Units are
+gated by a **section exam** (pass at 70%) that unlocks the next unit. Progress is stored in
+`localStorage`. There is no server, no AI service, no bundler and no test suite. 53 lessons
+across 12 units.
 
 ## Commands
 
@@ -75,13 +76,46 @@ object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`, define `--uN` i
 
 **App state (app.js)**
 
-- `S = {done:{lessonId:true}, step:{lessonId:stepIndex}}`, loaded from `localStorage` key
+- `S = {done:{lessonId:true}, last, xp, hearts, streak, lastDay, quiz:{qk:{picked,ok}},
+  exams:{unitId:{passed,correct,total}}}`, loaded from `localStorage` key
   `"boxes-and-arrows-v3"`; theme from `"boxes-and-arrows-theme"`. Persisted with `save()`.
-- `view` is `"home"` or `"lesson"`; `current = {unit, lesson, step}`. `render()` dispatches to
-  `renderHome()` / `renderStep()`, each rebuilding `app.innerHTML` from HTML strings.
+  `exams` is separate from `done` so completion maths is unaffected.
+- `view` is `"home"`, `"lesson"`, `"result"` or `"reviewdone"`; `current = {unit, lesson, step}`.
+  Each view rebuilds `app.innerHTML` from HTML strings via `renderHome()` / `renderStep()` /
+  `renderResult()`; `rerender()` re-runs the current view (used by the theme toggle).
 - UI is event-driven by delegation: one click listener on `#app` reads `data-act`
-  (`open`, `home`, `next`, `back`, `theme`, `jump`). Keyboard: ←/→ step, Esc home, `t` theme.
-- Finishing the last step marks `S.done[lesson]=true` and returns home.
+  (`open`, `home`, `next`, `prev`, `theme`, `dismiss`, `continue`, `review`, `exam`, `answer`).
+  Keyboard: ←/→ step, 1–4 answer a quiz, Esc home.
+- Finishing the last step marks `S.done[lesson]=true` and shows a pass/fail result card.
+
+**Section exams and gating**
+
+- Unit 01 is open; unit N unlocks when unit N−1's exam is passed (`unitUnlocked`). Migration
+  runs once at load: a unit fully present in `S.done` with no `S.exams` record gets
+  `{passed:true,migrated:true}` written back, so existing progress is never locked out — and a
+  recorded attempt (pass *or* fail) is never overridden. `unitExamPassed` reads only `S.exams`.
+- `examPool(ui)` builds the exam from that unit's `QUIZ_BANK` entries, namespaced as
+  `__exam__<unitId>::<lessonId>#<i>` — the lesson id is essential, because the per-lesson
+  index restarts at 0 and would otherwise collide across a unit's lessons. Questions already
+  answered correctly inline are dropped, but the pool never falls below 2 — thin banks
+  (e.g. Shipping's 2) still demand a real pass. `startExam` clears that unit's previous exam
+  answers so a retake is a fresh attempt.
+- Pass is `correct*10 >= total*7` (integer compare, no floats). Exams award XP but never deduct
+  hearts — they are the unlock path.
+- `nextLesson()` and `startLesson` both enforce the lock, so Continue cannot walk into a locked
+  unit. The home hero falls back to a "take the section exam" CTA when the next unit is locked.
+
+**Result card and mascot**
+
+- `renderResult()` serves lessons, exams and review with the same 70% threshold; exams may pass
+  their own `passed`. Pass = confetti canvas painted from `app.js` (CSP-safe, no library) plus
+  Boxy's hop; fail = Boxy's slump plus a "review these" list of missed questions.
+- Boxy's art is an `MASCOT_SVG` template in `app.js` (injected into `#mascot-inner`, reused by the
+  result card). Fail is always shown; success is rolled at `MASCOT_SUCCESS_CHANCE` (0.45) and
+  forced on a lesson's last *quiz* step. The slump is a static end-state, so
+  `prefers-reduced-motion` still reads as down (vs the up hop).
+- `.top` and `.lhead` are both sticky; `.lhead` stacks at `top:var(--top-h)`, measured from the
+  real `.top` height by `measureTop()` (re-run on resize) so the stats bar is never covered.
 
 **Rendering conventions**
 
