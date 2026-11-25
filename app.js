@@ -178,7 +178,7 @@ function rerender(){
   if(view==="lesson")renderStep();
   else if(view==="result"){if(lastResult)renderResult(lastResult);else renderHome();}
   else if(view==="reviewdone")renderReviewDone();
-  else renderHome();
+  else renderHome({keepScroll:true});
 }
 function toggleTheme(){
   var cur=document.documentElement.getAttribute("data-theme");
@@ -221,7 +221,37 @@ function examBand(ui){
   }
   return h+'</div></div>';
 }
-function renderHome(){
+/* ---------- resume scrolling ---------- */
+/* The home map can be long, so a fresh render picks up where the reader left off.
+   Only a real, still-present lesson whose section is unlocked counts as "last viewed";
+   anything stale falls back to the Continue target. Callers opt in with
+   renderHome({resume:true}) so rerender() — the theme toggle, a dismissed notice —
+   never yanks the page. scrollIntoView moves the viewport only; focus and the tab
+   order stay untouched. */
+function reduceMotion(){return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);}
+function lessonUnit(id){
+  for(var i=0;i<UNITS.length;i++){
+    if(UNITS[i].lessons.some(function(l){return l.id===id;}))return i;
+  }
+  return -1;
+}
+function resumeTarget(){
+  if(S.last&&LESSONS[S.last]){
+    var ui=lessonUnit(S.last);
+    if(ui>=0&&unitUnlocked(ui))return S.last;
+  }
+  var n=nextLesson();
+  return n?n.id:null;
+}
+function scrollToResume(){
+  var id=resumeTarget();
+  var row=id?app.querySelector('[data-act="open"][data-id="'+id+'"]'):null;
+  if(row)row.scrollIntoView({block:"center",behavior:reduceMotion()?"auto":"smooth"});
+  else window.scrollTo(0,0);
+}
+
+function renderHome(opt){
+  opt=opt||{};
   view="home";mascotHide();
   var dc=doneCount(),pct=Math.round(dc/FLAT.length*100);
   var nxt=nextLesson();
@@ -276,7 +306,10 @@ function renderHome(){
   h+='<div class="wrap foot"><p class="small">Progress is saved in this browser. Quizzes earn XP; wrong answers cost a heart. Pass each section exam to unlock the next.</p></div>';
   app.innerHTML=h;
   measureTop();
-  window.scrollTo(0,0);
+  /* `resume` is true only on a fresh home render (initial load, Home). `keepScroll`
+     covers rerender() — the theme toggle or a dismissed notice — which re-runs the
+     current view in place and must never yank the page. */
+  if(opt.resume)scrollToResume();else if(!opt.keepScroll)window.scrollTo(0,0);
 }
 
 /* ---------- quiz rendering ---------- */
@@ -736,7 +769,7 @@ app.addEventListener("click",function(e){
   var a=t.dataset.act;
   if(a==="theme"){toggleTheme();}
   else if(a==="dismiss"){notice="";rerender();}
-  else if(a==="home"){notice="";renderHome();}
+  else if(a==="home"){notice="";renderHome({resume:true});}
   else if(a==="continue"){var n=nextLesson();if(n)startLesson(n.id,n.ui);}
   else if(a==="review"){notice="";startReview();}
   else if(a==="open"){startLesson(t.dataset.id,+t.dataset.ui);}
@@ -755,9 +788,9 @@ document.addEventListener("keydown",function(e){
   }
   if(e.key==="ArrowRight"){e.preventDefault();goNext();}
   else if(e.key==="ArrowLeft"){e.preventDefault();goPrev();}
-  else if(e.key==="Escape"){notice="";renderHome();}
+  else if(e.key==="Escape"){notice="";renderHome({resume:true});}
 });
 window.addEventListener("resize",measureTop);
 
-renderHome();
+renderHome({resume:true});
 })();
