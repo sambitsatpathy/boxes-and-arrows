@@ -193,7 +193,7 @@ function topBar(){
   var t=document.documentElement.getAttribute("data-theme");
   var icon=(t==="dark")?"sun":"moon";
   return'<div class="top"><div class="wrap topin">'+
-    '<div class="brand"><span class="mark"><svg class="ic"><use href="#i-boxes"/></svg></span>'+
+    '<div class="brand" role="img" aria-label="Boxes and Arrows"><span class="mark"><svg class="ic"><use href="#i-boxes"/></svg></span>'+
     '<span>Boxes &amp; Arrows<small>system design</small></span></div>'+
     '<span class="stat s-streak" title="Day streak">'+ic("flame")+(S.streak||0)+'</span>'+
     '<span class="stat s-heart" title="Hearts">'+ic("heart")+hearts()+'</span>'+
