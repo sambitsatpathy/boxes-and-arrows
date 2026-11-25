@@ -173,6 +173,16 @@ button:disabled{cursor:not-allowed}
 .lrow.done{background:var(--surface-2)}
 .lrow.done .idx{background:var(--good-soft);border-color:var(--good);color:var(--good-fg)}
 .lrow.next{border-color:var(--uc,var(--accent));box-shadow:0 0 0 3px color-mix(in srgb,var(--uc,var(--accent)) 22%,transparent)}
+/* One-shot "you are here" cue at splash handover. The boot landing is instant
+   (there is no visible camera move), so a brief expanding ring tells the eye where
+   the map landed. No fill mode: the row's normal ring/background return as soon as
+   app.js drops the class. The global reduced-motion rule disables it, and app.js
+   does not add the class at all in that case. */
+@keyframes resume-here{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 70%,transparent)}
+  100%{box-shadow:0 0 0 12px color-mix(in srgb,var(--accent) 0%,transparent)}
+}
+.lrow.resume-here{animation:resume-here 1s ease-out .2s 1;position:relative;z-index:1}
 .lrow .ic.caret{color:var(--line-strong);font-size:18px}
 
 .foot{margin:28px 0 40px;display:grid;gap:8px}

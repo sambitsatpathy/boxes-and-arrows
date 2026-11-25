@@ -22,6 +22,7 @@ var splashT0=splashNow();
 function splashReduced(){return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);}
 function killSplash(){
   if(splashDone)return;splashDone=true;
+  pulseResumeRow();
   var el=splashEl;if(!el)return;
   if(splashReduced()){
     if(el.parentNode)el.parentNode.removeChild(el);
@@ -258,6 +259,7 @@ function examBand(ui){
    renderHome({resume:true}) so rerender() — the theme toggle, a dismissed notice —
    never yanks the page. scrollIntoView moves the viewport only; focus and the tab
    order stay untouched. */
+var resumeRow=null; /* boot target, pulsed once when the splash hands over */
 function reduceMotion(){return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);}
 function lessonUnit(id){
   for(var i=0;i<UNITS.length;i++){
@@ -273,11 +275,24 @@ function resumeTarget(){
   var n=nextLesson();
   return n?n.id:null;
 }
-function scrollToResume(){
+function scrollToResume(boot){
   var id=resumeTarget();
   var row=id?app.querySelector('[data-act="open"][data-id="'+id+'"]'):null;
-  if(row)row.scrollIntoView({block:"center",behavior:reduceMotion()?"auto":"smooth"});
-  else window.scrollTo(0,0);
+  resumeRow=null;
+  if(row){
+    /* The boot render sits behind the opaque splash: a smooth scroll there is
+       motion nobody sees and may still be running when the overlay is removed.
+       Land instantly and mark the row for a one-shot cue at handover instead.
+       Later Home/Escape renders keep their visible smooth scroll. */
+    row.scrollIntoView({block:"center",behavior:(boot||reduceMotion())?"auto":"smooth"});
+    if(boot)resumeRow=row;
+  }else window.scrollTo(0,0);
+}
+function pulseResumeRow(){
+  var row=resumeRow;resumeRow=null;
+  if(!row||!row.isConnected||reduceMotion())return;
+  row.classList.add("resume-here");
+  setTimeout(function(){row.classList.remove("resume-here");},1400);
 }
 
 function renderHome(opt){
@@ -336,10 +351,11 @@ function renderHome(opt){
   h+='<div class="wrap foot"><p class="small">Progress is saved in this browser. Quizzes earn XP; wrong answers cost a heart. Pass each section exam to unlock the next.</p></div>';
   app.innerHTML=h;
   measureTop();
-  /* `resume` is true only on a fresh home render (initial load, Home). `keepScroll`
-     covers rerender() — the theme toggle or a dismissed notice — which re-runs the
-     current view in place and must never yank the page. */
-  if(opt.resume)scrollToResume();else if(!opt.keepScroll)window.scrollTo(0,0);
+  /* `resume` is true on a fresh home render (initial load, Home, Escape). `boot`
+     marks the one behind the splash: it lands instantly and is pulsed at handover.
+     `keepScroll` covers rerender() — a theme toggle or dismissed notice — which
+     must never yank the page. */
+  if(opt.resume)scrollToResume(!!opt.boot);else if(!opt.keepScroll)window.scrollTo(0,0);
 }
 
 /* ---------- quiz rendering ---------- */
@@ -822,8 +838,9 @@ document.addEventListener("keydown",function(e){
 });
 window.addEventListener("resize",measureTop);
 
-renderHome({resume:true});
+renderHome({resume:true,boot:true});
 /* Initialisation done: fade the splash over the rendered view (revealApp caps the
-   beat and falls back to the error/load safety nets if anything went wrong). */
+   beat and falls back to the error/load safety nets if anything went wrong). The
+   boot landing is already in place; only the row pulse waits for the handover. */
 revealApp();
 })();
