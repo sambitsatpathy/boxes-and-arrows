@@ -83,6 +83,24 @@ button:disabled{cursor:not-allowed}
 .s-done .ic{color:var(--good)}
 .s-xp .ic{color:var(--gold)}
 
+/* ---------- Top bar on phones (<720px) ----------
+   Keep the sticky bar to one line. The wordmark is truncated instead of wrapping
+   under the logo; the subtitle and some slack go away at narrow widths. */
+@media (max-width:719px){
+  .topin{gap:8px}
+  /* Title span only: `.brand > span` also hits .mark, and overflow:hidden there
+     would clip its 3D base shadow. min-width:0 lets the flex item shrink to the
+     truncation point so the ellipsis actually engages. */
+  .brand>span:not(.mark){min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand small{display:none}
+  .stat{font-size:13px}
+  .stat .ic{font-size:16px}
+}
+/* Last resort: nothing else fits below 400px, so drop XP and keep the rest. */
+@media (max-width:400px){
+  .s-xp{display:none}
+}
+
 /* ---------- Home ---------- */
 .hero{padding-block:32px 6px;display:grid;gap:12px}
 .hero h1{font:800 32px/1.05 var(--font-display);letter-spacing:-.02em;text-wrap:balance}
