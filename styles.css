@@ -96,7 +96,10 @@ button:disabled{cursor:not-allowed}
 .unit{margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
 .unit:first-of-type{margin-top:24px;padding-top:0;border-top:0}
 .unithd{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 10px;border-radius:12px;
-  background:color-mix(in srgb,var(--uc,var(--accent)) 8%,transparent)}
+  background:color-mix(in srgb,var(--uc,var(--accent)) 12%,var(--bg));
+  /* Pins under .top for this unit only; the next unit's header replaces it.
+     Opaque fill + separator, so lesson rows never show through while stuck. */
+  position:sticky;top:var(--top-h,56px);z-index:10;border-bottom:1px solid var(--line)}
 .unithd .num{font:700 12px var(--font-mono);letter-spacing:.06em;color:var(--uc,var(--accent));
   background:color-mix(in srgb,var(--uc,var(--accent)) 12%,transparent);
   border:1.5px solid color-mix(in srgb,var(--uc,var(--accent)) 32%,transparent);border-radius:8px;padding:5px 8px}
