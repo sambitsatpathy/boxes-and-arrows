@@ -84,15 +84,13 @@ button:disabled{cursor:not-allowed}
 .s-xp .ic{color:var(--gold)}
 
 /* ---------- Top bar on phones (<720px) ----------
-   Keep the sticky bar to one line. The wordmark is truncated instead of wrapping
-   under the logo; the subtitle and some slack go away at narrow widths. */
+   Keep the sticky bar to one line. The wordmark is dropped rather than wrapping
+   under the logo (user decision); the subtitle goes with it and the stats take
+   the freed room. */
 @media (max-width:719px){
   .topin{gap:8px}
-  /* Title span only: `.brand > span` also hits .mark, and overflow:hidden there
-     would clip its 3D base shadow. min-width:0 lets the flex item shrink to the
-     truncation point so the ellipsis actually engages. */
-  .brand>span:not(.mark){min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .brand small{display:none}
+  /* Title span only: `.brand > span` also hits .mark, whose 3D base shadow must stay. */
+  .brand>span:not(.mark){display:none}
   .stat{font-size:13px}
   .stat .ic{font-size:16px}
 }
