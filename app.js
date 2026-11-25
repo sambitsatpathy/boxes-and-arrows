@@ -9,6 +9,12 @@
 (function(){
 "use strict";
 
+/* The app owns the reader's scroll position: boot lands instantly on the resume
+   row. If the browser restores the pre-reload offset afterwards, that landing is
+   silently undone — there is no animation left to win over restoration — so opt
+   out before anything renders. */
+try{history.scrollRestoration="manual";}catch(e){}
+
 /* ---------- splash handover ----------
    The splash is what paints first; this hands over to the rendered view. Registered
    before anything that can throw, so a failure partway through init still clears it
