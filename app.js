@@ -9,6 +9,36 @@
 (function(){
 "use strict";
 
+/* ---------- splash handover ----------
+   The splash is what paints first; this hands over to the rendered view. Registered
+   before anything that can throw, so a failure partway through init still clears it
+   (window error handler + hard cap) instead of leaving it on a blank page. Reduced
+   motion swaps instantly: no pulse, no fade. */
+var splashEl=document.getElementById("splash");
+var splashDone=false;
+var SPLASH_MIN=420, SPLASH_CAP=1500;
+function splashNow(){return (window.performance&&typeof performance.now==="function")?performance.now():Date.now();}
+var splashT0=splashNow();
+function splashReduced(){return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);}
+function killSplash(){
+  if(splashDone)return;splashDone=true;
+  var el=splashEl;if(!el)return;
+  if(splashReduced()){
+    if(el.parentNode)el.parentNode.removeChild(el);
+    return;
+  }
+  try{el.classList.add("gone");}catch(e){}
+  setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},420);
+}
+window.addEventListener("error",killSplash);
+setTimeout(killSplash,Math.max(0,SPLASH_CAP-splashT0));
+window.addEventListener("load",function(){setTimeout(killSplash,Math.max(0,SPLASH_CAP-(splashNow()-splashT0)));});
+function revealApp(){
+  if(splashDone)return;
+  var wait=splashReduced()?0:Math.max(0,SPLASH_MIN-(splashNow()-splashT0));
+  setTimeout(killSplash,wait);
+}
+
 var KEY="boxes-and-arrows-v3";
 var THEME_KEY="boxes-and-arrows-theme";
 var UNITS=COURSE_UNITS, LESSONS=COURSE_LESSONS;
@@ -793,4 +823,7 @@ document.addEventListener("keydown",function(e){
 window.addEventListener("resize",measureTop);
 
 renderHome({resume:true});
+/* Initialisation done: fade the splash over the rendered view (revealApp caps the
+   beat and falls back to the error/load safety nets if anything went wrong). */
+revealApp();
 })();

@@ -69,6 +69,38 @@ button:disabled{cursor:not-allowed}
 .small{font-size:14px;color:var(--muted)}
 .wrap{width:100%;max-width:640px;margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left,0px))}
 
+/* ---------- Loading splash ----------
+   First paint until app.js hands over. Fixed overlay with an opaque fill, so the
+   swap fades over the already-rendered view and never shifts layout. All motion
+   is CSS; app.js only adds .gone and removes the node (no inline script, CSP). */
+#splash{position:fixed;inset:0;z-index:60;display:grid;place-content:center;justify-items:center;gap:24px;
+  padding:24px;background:var(--bg);text-align:center;
+  transition:opacity .34s ease,visibility 0s linear .34s}
+#splash.gone{opacity:0;visibility:hidden;pointer-events:none}
+.splash-lockup{display:flex;align-items:center;gap:13px;font:800 27px/1 var(--font-display);letter-spacing:-.01em}
+.splash-lockup .mark{width:54px;height:54px;flex:none;display:grid;place-items:center;border-radius:15px;
+  background:var(--accent);color:var(--on-accent);box-shadow:0 4px 0 var(--accent-edge);
+  animation:splash-pulse 1.7s ease-in-out infinite}
+.splash-lockup .mark .ic{font-size:29px}
+.splash-lockup .wordmark{text-align:left}
+.splash-lockup small{display:block;margin-top:5px;font:600 11px/1.2 var(--font-mono);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted)}
+.splash-track{width:min(240px,62vw);height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.splash-track>i{display:block;height:100%;width:38%;border-radius:99px;background:var(--accent);
+  animation:splash-slide 1.3s cubic-bezier(.45,.02,.55,.98) infinite}
+@keyframes splash-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.9);opacity:.8}}
+@keyframes splash-slide{0%{transform:translateX(-100%)}100%{transform:translateX(265%)}}
+@media (max-width:380px){
+  .splash-lockup{gap:10px;font-size:23px}
+  .splash-lockup .mark{width:46px;height:46px;border-radius:13px}
+  .splash-lockup .mark .ic{font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){
+  #splash{transition:none}
+  .splash-lockup .mark,.splash-track>i{animation:none}
+  .splash-track{display:none}
+}
+
 /* ---------- Top bar ---------- */
 .top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:2px solid var(--line)}
 .topin{display:flex;align-items:center;gap:10px;padding-block:10px}

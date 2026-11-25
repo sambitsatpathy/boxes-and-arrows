@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="styles.css?v=12">
+<link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -46,13 +46,20 @@
   <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></g></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path fill="currentColor" d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
 </svg>
+<div id="splash" role="status" aria-label="Loading Boxes and Arrows">
+  <div class="splash-lockup">
+    <span class="mark"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-boxes"/></svg></span>
+    <span class="wordmark">Boxes &amp; Arrows<small>system design</small></span>
+  </div>
+  <div class="splash-track" aria-hidden="true"><i></i></div>
+</div>
 <div id="app"></div>
 <div class="mascot-dock" aria-hidden="true"><div class="mascot-slot" id="mascot-slot"><div class="mascot-inner" id="mascot-inner"></div></div></div>
-<noscript><p style="padding:24px;font-family:system-ui,sans-serif">Boxes &amp; Arrows needs JavaScript to run.</p></noscript>
+<noscript><style>#splash{display:none}</style><p style="padding:24px;font-family:system-ui,sans-serif">Boxes &amp; Arrows needs JavaScript to run.</p></noscript>
 <script src="course.js?v=2"></script>
 <script src="course-judgement.js?v=1"></script>
 <script src="course-enhance.js?v=1"></script>
 <script src="course-quizzes.js?v=1"></script>
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>
