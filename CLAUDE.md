@@ -26,12 +26,13 @@ preset "Other", no build command, output directory `.`. Any static host works.
 Syntax-check the scripts (no tests exist):
 
 ```sh
-node --check app.js && node --check course.js && node --check course-judgement.js && node --check course-enhance.js
+node --check app.js && node --check course.js && node --check course-judgement.js && node --check course-enhance.js && node --check course-quizzes.js
 ```
 
 There is no lint or build step. Changes appear on a browser refresh. Asset URLs in
 `index.html` carry cache-busting query strings (`?v=...`); bump them when editing a file so
-cached copies are invalidated.
+cached copies are invalidated. Re-read these files before editing if another session has
+touched the repo — the cache-buster counter is shared.
 
 ## Architecture
 
@@ -47,10 +48,13 @@ cached copies are invalidated.
 - `course-judgement.js` — unit 10 (Design Judgement, 3 lessons). Pushes onto the same globals.
 - `course-enhance.js` — units 11–12 (Networking & the Edge; Patterns & Data Modelling, 10 lessons).
   Pushes onto the same globals.
-- `app.js` — the entire application in one IIFE. Reads `COURSE_UNITS` / `COURSE_LESSONS`.
+- `course-quizzes.js` — the quiz bank as a plain global: `QUIZ_BANK`. Feeds the inline
+  "Quick check" steps, the section exams (`examPool`) and Review mode.
+- `app.js` — the entire application in one IIFE. Reads `COURSE_UNITS` / `COURSE_LESSONS` / `QUIZ_BANK`.
+- `mascot-concepts.html` — standalone ideation page with animated mascot concepts; **not** loaded by the app.
 - `vercel.json` — static hosting + security headers (CSP). Keep changes CSP-compatible.
 
-**Script order matters:** `course.js` → `course-judgement.js` → `course-enhance.js` → `app.js`.
+**Script order matters:** `course.js` → `course-judgement.js` → `course-enhance.js` → `course-quizzes.js` → `app.js`.
 The course files mutate the globals; `app.js` reads them at load. Adding a unit = push a unit
 object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`, define `--uN` in `styles.css`.
 
@@ -114,8 +118,28 @@ object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`, define `--uN` i
   result card). Fail is always shown; success is rolled at `MASCOT_SUCCESS_CHANCE` (0.45) and
   forced on a lesson's last *quiz* step. The slump is a static end-state, so
   `prefers-reduced-motion` still reads as down (vs the up hop).
-- `.top` and `.lhead` are both sticky; `.lhead` stacks at `top:var(--top-h)`, measured from the
-  real `.top` height by `measureTop()` (re-run on resize) so the stats bar is never covered.
+
+**UI behaviour (styles.css / app.js)**
+
+- **Sticky chrome.** `.top` and `.lhead` are both sticky; `.lhead` stacks at `top:var(--top-h)`,
+  measured from the real `.top` height by `measureTop()` (re-run on resize) so the stats bar is
+  never covered. `.unithd` sticks per unit at `top:var(--top-h)` with `z-index:10` — above the
+  rows, below the chrome (a third `z-index:20` would fall back to DOM order and paint over
+  `.top`). The next unit's header replaces it.
+- **Top bar on phones.** Below 720px the wordmark (`.brand > span:not(.mark)`) is dropped so the
+  logo tile plus the four stats fit on one line. `.brand` carries `role="img"
+  aria-label="Boxes and Arrows"` so the bar stays labelled.
+- **Resume scrolling.** A fresh home render picks up the reader's place: `renderHome({resume:true})`
+  centres `S.last` when it still resolves and its section is unlocked, else falls back to
+  `nextLesson()`. `rerender()` passes `{keepScroll:true}` so the theme toggle / a dismissed
+  notice never yanks the page. It honours `prefers-reduced-motion` and never moves focus.
+  `scroll-margin` does not adjust `block:"center"` alignment; rows near the top of the document
+  can be clamped under the sticky chrome, so landing must be verified at unit 1's first lesson.
+- **Loading splash.** `#splash` (in `index.html`, outside `#app`) is a branded, CSS-animated
+  loading overlay; `app.js` removes it from the DOM on handover (`revealApp()`), with
+  `SPLASH_MIN` / `SPLASH_CAP` controlling the beat and `window` error/load fallbacks so a failed
+  init cannot strand it. It is themed in the same three places as the app. Keep the animation
+  smooth and do **not** add "Loading…" copy — there is no work to report.
 
 **Rendering conventions**
 

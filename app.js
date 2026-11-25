@@ -16,7 +16,7 @@
    motion swaps instantly: no pulse, no fade. */
 var splashEl=document.getElementById("splash");
 var splashDone=false;
-var SPLASH_MIN=420, SPLASH_CAP=1500;
+var SPLASH_MIN=1200, SPLASH_CAP=2500;
 function splashNow(){return (window.performance&&typeof performance.now==="function")?performance.now():Date.now();}
 var splashT0=splashNow();
 function splashReduced(){return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);}
