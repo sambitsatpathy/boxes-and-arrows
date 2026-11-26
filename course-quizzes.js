@@ -511,6 +511,50 @@ var QUIZ_BANK={
   C("it compresses memcached entries so more fit in memory",false,"Compression is not what CDC is for."),
   C("it streams database changes so caches and replicas stay consistent after a write",true,"CDC publishes changes from the source database instead of relying on multiple coordinated writes."),
   C("it authenticates GraphQL queries from mobile apps",false,"Authentication is not the role of CDC.")])
+],
+
+/* ---------- Unit 16 · Mobility & Commerce ---------- */
+"uber-api-layer":[
+ Q("In the guide’s first-generation Uber architecture, what did the dispatch service do?",[
+  C("It stored the long-term records of users and trips",false,"That was the API service’s job."),
+  C("It connected a rider with a driver",true,"The dispatch service did the live rider–driver match."),
+  C("It was the all-encompassing API gateway",false,"The single gateway belongs to the second generation."),
+  C("It indexed nearby restaurants with geohash",false,"Geohash belongs to the separate proximity guide.")
+ ]),
+ Q("Why does the proximity guide encode locations as geohash prefixes?",[
+  C("So a radius search can use an index instead of computing distance to every row",true,"Prefix lookups shrink the candidate set before any precise distance work."),
+  C("Because latitude and longitude cannot be stored in a SQL database",false,"They can; the problem is the cost of scanning all of them."),
+  C("To make every grid cell hold roughly the same number of restaurants",false,"The guide explicitly notes that skew between dense and empty cells remains."),
+  C("To remove the need for any distance calculation at all",false,"An exact distance check is still applied to the finalists.")
+ ])
+],
+"airbnb-soa":[
+ Q("Which Airbnb service role is the entry point for all reads and writes of a data entity?",[
+  C("The data service",true,"Data services sit at the bottom layer and own the entity."),
+  C("The derived data service",false,"Derived services read from data services and apply light logic."),
+  C("The middle-tier service",false,"The middle tier holds logic that does not fit at the data layers."),
+  C("The presentation service",false,"Presentation services aggregate results for clients.")
+ ]),
+ Q("What had to happen before Airbnb could eliminate the Monorail?",[
+  C("All reads and writes had to move to the new services",true,"The guide says the monolith was removed after the full migration."),
+  C("It had to be kept on as a read replica",false,"Keeping a second owner for the same data is the problem, not the fix."),
+  C("Every service had to be rewritten in Ruby on Rails",false,"Rails was the old monolith, not a migration requirement."),
+  C("The gateway had to be moved inside it",false,"The gateway fronts the services; it is not part of the monolith.")
+ ])
+],
+"ecommerce-workflow":[
+ Q("In the e-commerce workflow, what happens just before the customer pays?",[
+  C("Order management reserves stock in the inventory system",true,"The guide reserves stock first and then takes payment."),
+  C("Transportation ships the parcel",false,"The outbound order comes after payment."),
+  C("The promotion system defines coupons",false,"Promotions are set up earlier, before the customer orders."),
+  C("Procurement settles invoices with suppliers",false,"That is a separate business-area flow.")
+ ]),
+ Q("In Amazon’s Brazil build system, what is a version set?",[
+  C("A private collection of package versions for a package and its dependencies",true,"Version sets give teams an isolated space for their dependency choices."),
+  C("A list of planned release dates",false,"It is a collection of package versions, not a schedule."),
+  C("The ARM build target",false,"ARM is one of the platforms the package builder supports."),
+  C("The public CI schedule for master commits",false,"The public default space is called ‘live’, not a version set.")
+ ])
 ]
 };
 

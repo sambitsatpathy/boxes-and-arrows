@@ -1,7 +1,7 @@
 # Boxes & Arrows
 
-A mobile-first, no-backend course for learning system design — **62 step-by-step lessons**
-across **15 units**, drawn as boxes and arrows, with Duolingo-style quick-check quizzes,
+A mobile-first, no-backend course for learning system design — **65 step-by-step lessons**
+across **16 units**, drawn as boxes and arrows, with Duolingo-style quick-check quizzes,
 XP, hearts, streaks and a spaced **Review** mode.
 
 - **40 lessons** rebuilt from the [designed-to-scale](https://designed-to-scale.vercel.app/) course.
@@ -17,6 +17,9 @@ XP, hearts, streaks and a spaced **Review** mode.
 - **Unit 15 · Build the Giants: Social & Mail** (3 lessons) — Twitter's For You funnel and
   service architecture, the end-to-end journey of an email, and Reddit's core architecture,
   grounded in the system-design-101 guides.
+- **Unit 16 · Build the Giants: Mobility & Commerce** (3 lessons) — Uber’s API layer and
+  proximity search, Airbnb’s monolith-to-services migration, and e-commerce plus Brazil builds,
+  grounded in the system-design-101 guides.
 
 Everything runs in the browser. There is no server, no build step, no AI service and no
 test suite. Progress is stored in `localStorage`.
@@ -24,7 +27,7 @@ test suite. Progress is stored in `localStorage`.
 ## Files
 
 - `index.html` — page shell, SVG icon symbols, cache-busted `<script>`/`<link>` tags.
-- `styles.css` — all styling (mobile-first, light/dark). Unit accents are `--u1` … `--u15`.
+- `styles.css` — all styling (mobile-first, light/dark). Unit accents are `--u1` … `--u16`.
 - `course.js` — the core course data as plain globals: `COURSE_UNITS` (9 units) and
   `COURSE_LESSONS` (40 lessons, 445 steps). Each step carries `short`, `chapter`,
   `title`, `body`, `callout`, `changes` and a `scene` (entities + links for the diagram).
@@ -34,7 +37,8 @@ test suite. Progress is stored in `localStorage`.
 - `course-unit13.js` — unit 13, **Build the Giants: Messaging** (3 lessons, 41 steps).
 - `course-unit14.js` — unit 14, **Build the Giants: Media** (3 lessons, 44 steps).
 - `course-unit15.js` — unit 15, **Build the Giants: Social & Mail** (3 lessons, 42 steps).
-- `course-quizzes.js` — the quiz bank (`QUIZ_BANK`, 72 questions) plus one or two "Quick check"
+- `course-unit16.js` — unit 16, **Build the Giants: Mobility & Commerce** (3 lessons, 44 steps).
+- `course-quizzes.js` — the quiz bank (`QUIZ_BANK`, 78 questions) plus one or two "Quick check"
   steps injected into every lesson before its recap. Also feeds Review mode.
 - `app.js` — the whole app in one IIFE: course walker, quiz engine, XP/hearts/streak and Review.
 - `mascot-concepts.html` — standalone ideation board with three animated mascot concepts (not loaded by the app).
@@ -73,14 +77,19 @@ The app also opens straight from `index.html`. Deploy on Vercel with framework p
   recommendation funnel, the 2022 timeline service graph, the MUA/MTA/MDA journey of an
   email, and Reddit's CDN, federation, cache and queue architecture. Guide URLs are
   credited in each lesson body.
+- Unit 16: written from the ByteByteGo mobility and commerce guides — Uber’s three API-layer
+  generations, geohash-based proximity search, Airbnb’s four SOA service roles, the four
+  e-commerce business areas and Amazon’s Brazil build system. Guide URLs are credited in
+  each lesson body.
 
 ## Conventions
 
 - Course globals load before `app.js`; keep the script order in `index.html`
   (`course.js` → `course-judgement.js` → `course-enhance.js` → `course-unit13.js` →
-  `course-unit14.js` → `course-unit15.js` → `course-quizzes.js` → `app.js`).
+  `course-unit14.js` → `course-unit15.js` → `course-unit16.js` → `course-quizzes.js` → `app.js`).
 - Bump the `?v=` query on `styles.css` / `course.js` / `course-judgement.js` /
-  `course-enhance.js` / `course-unit13.js` /  `course-unit14.js` / `course-unit15.js` / `course-quizzes.js` / `app.js`
+  `course-enhance.js` / `course-unit13.js` /  `course-unit14.js` / `course-unit15.js` /
+  `course-unit16.js` / `course-quizzes.js` / `app.js`
   in `index.html` after editing them, so cached copies invalidate.
 - Adding a unit: push a unit object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`,
   and define its `--uN` accent in `styles.css` (light + both dark blocks).
