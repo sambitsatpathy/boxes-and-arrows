@@ -1,7 +1,7 @@
 # Boxes & Arrows
 
-A mobile-first, no-backend course for learning system design — **56 step-by-step lessons**
-across **13 units**, drawn as boxes and arrows, with Duolingo-style quick-check quizzes,
+A mobile-first, no-backend course for learning system design — **59 step-by-step lessons**
+across **14 units**, drawn as boxes and arrows, with Duolingo-style quick-check quizzes,
 XP, hearts, streaks and a spaced **Review** mode.
 
 - **40 lessons** rebuilt from the [designed-to-scale](https://designed-to-scale.vercel.app/) course.
@@ -12,6 +12,8 @@ XP, hearts, streaks and a spaced **Review** mode.
   [ByteByteGoHq/system-design-101](https://github.com/ByteByteGoHq/system-design-101).
 - **Unit 13 · Build the Giants: Messaging** (3 lessons) — WhatsApp, Discord's message store
   and the journey of a Slack message, grounded in the system-design-101 guides.
+- **Unit 14 · Build the Giants: Media** (3 lessons) — YouTube's upload pipeline, live
+  streaming and the four ways Netflix caches, grounded in the system-design-101 guides.
 
 Everything runs in the browser. There is no server, no build step, no AI service and no
 test suite. Progress is stored in `localStorage`.
@@ -19,7 +21,7 @@ test suite. Progress is stored in `localStorage`.
 ## Files
 
 - `index.html` — page shell, SVG icon symbols, cache-busted `<script>`/`<link>` tags.
-- `styles.css` — all styling (mobile-first, light/dark). Unit accents are `--u1` … `--u13`.
+- `styles.css` — all styling (mobile-first, light/dark). Unit accents are `--u1` … `--u14`.
 - `course.js` — the core course data as plain globals: `COURSE_UNITS` (9 units) and
   `COURSE_LESSONS` (40 lessons, 445 steps). Each step carries `short`, `chapter`,
   `title`, `body`, `callout`, `changes` and a `scene` (entities + links for the diagram).
@@ -27,7 +29,8 @@ test suite. Progress is stored in `localStorage`.
 - `course-enhance.js` — units 11–12, **Networking & the Edge** and **Patterns & Data Modelling**
   (10 lessons, 80 steps).
 - `course-unit13.js` — unit 13, **Build the Giants: Messaging** (3 lessons, 41 steps).
-- `course-quizzes.js` — the quiz bank (`QUIZ_BANK`, 60 questions) plus one or two "Quick check"
+- `course-unit14.js` — unit 14, **Build the Giants: Media** (3 lessons, 44 steps).
+- `course-quizzes.js` — the quiz bank (`QUIZ_BANK`, 66 questions) plus one or two "Quick check"
   steps injected into every lesson before its recap. Also feeds Review mode.
 - `app.js` — the whole app in one IIFE: course walker, quiz engine, XP/hearts/streak and Review.
 - `mascot-concepts.html` — standalone ideation board with three animated mascot concepts (not loaded by the app).
@@ -59,16 +62,18 @@ The app also opens straight from `index.html`. Deploy on Vercel with framework p
 - Unit 13: written from the ByteByteGo messaging guides — login/presence, sequencing and
   message stores, sync queues, receipts, groups, E2E, Discord's storage evolution and
   Slack's five-server delivery path. Guide URLs are credited in each lesson body.
+- Unit 14: written from the ByteByteGo media guides — YouTube's 500+ hours/min upload
+  pipeline and VCUs, live streaming's encode/segment/CDN path, and the four roles EVCache
+  plays in Netflix's architecture. Guide URLs are credited in each lesson body.
 
 ## Conventions
 
 - Course globals load before `app.js`; keep the script order in `index.html`
   (`course.js` → `course-judgement.js` → `course-enhance.js` → `course-unit13.js` →
-  `course-quizzes.js` → `app.js`).
+  `course-unit14.js` → `course-quizzes.js` → `app.js`).
 - Bump the `?v=` query on `styles.css` / `course.js` / `course-judgement.js` /
-  `course-enhance.js` / `course-unit13.js` / `course-quizzes.js` / `app.js` in `index.html`
-  after editing them, so
-  cached copies invalidate.
+  `course-enhance.js` / `course-unit13.js` / `course-unit14.js` / `course-quizzes.js` /
+  `app.js` in `index.html` after editing them, so cached copies invalidate.
 - Adding a unit: push a unit object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`,
   and define its `--uN` accent in `styles.css` (light + both dark blocks).
 - CSP in `vercel.json` is `script-src 'self'` — no inline scripts, no `eval`, no network

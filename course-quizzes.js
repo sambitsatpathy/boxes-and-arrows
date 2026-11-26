@@ -435,6 +435,44 @@ var QUIZ_BANK={
   C("WebSocket is full duplex, so both sides can send with low latency",true,"Chat needs replies and pushes over one cheap channel."),
   C("WebSocket needs no connection upgrade",false,"It begins with an upgrade."),
   C("SSE is not supported in browsers",false,"It is supported; the limitation is direction.")])
+],
+
+/* ---------- Unit 14 · Build the Giants: Media ---------- */
+"youtube-uploads":[
+ Q("Why did YouTube build VCUs instead of just adding more general-purpose servers?",[
+  C("VCUs are cheap, off-the-shelf parts",false,"Custom silicon is an investment, not a bargain-bin component."),
+  C("Encoding is one narrow, enormous job, and VCUs do it far more efficiently",true,"Hardware built for transcoding delivered the reported 20–33× efficiency gain."),
+  C("VCUs remove the need to store several renditions",false,"The ladder still has to be produced and stored."),
+  C("Software cannot produce 720p or 4K at all",false,"Software can — the problem was cost and speed.")]),
+ Q("Why transcode an upload into a ladder of resolutions and bitrates?",[
+  C("so every device downloads the same number of bytes",false,"The whole point is that the renditions differ in size."),
+  C("so the player can pick a rung that suits its screen and connection",true,"Renditions are the raw material of adaptive bitrate playback."),
+  C("so the original source file can be deleted immediately",false,"The source is usually kept as well."),
+  C("so the CDN does not have to cache the video",false,"CDNs cache the renditions — that is how they stay fast.")])
+],
+"live-streaming":[
+ Q("Why cut a live video into segments only a few seconds long?",[
+  C("so each piece can be fetched quickly and recovered from a hiccup",true,"Short, keyframe-aligned segments give fast start and quick recovery."),
+  C("to make the video smaller on disk",false,"Compression does that; segmentation does not."),
+  C("to avoid producing multiple bitrates",false,"Several bitrates are produced alongside segmentation."),
+  C("to remove the need for a CDN",false,"Segments are exactly what CDNs distribute to viewers.")]),
+ Q("A viewer's bandwidth drops mid-broadcast. What keeps the stream playing?",[
+  C("the server resends the whole video at a lower resolution",false,"There is no finished video in a live stream — only recent segments."),
+  C("the player switches to a lower-bitrate rung listed in the manifest",true,"Adaptive bitrate streaming is built from the ladder made during encoding."),
+  C("the CDN grows the buffer until bandwidth returns",false,"A bigger buffer adds delay rather than fixing the drop."),
+  C("the viewer switches from HLS to RTC",false,"RTC is for conversations, not broadcast delivery.")])
+],
+"netflix-caching":[
+ Q("Which EVCache use makes the cache the only store read online?",[
+  C("Lookaside caching",false,"In lookaside, the database is still the source of truth."),
+  C("Precomputed home pages written nightly and read as a primary store",true,"The home page is built offline, and online services only read EVCache."),
+  C("Playback session state",false,"Sessions are transient state shared across services."),
+  C("UI strings and translations",false,"Those are async-published, high-volume data — not the whole read path.")]),
+ Q("In a lookaside cache, what happens when a key is missing?",[
+  C("the request fails until somebody refills the cache",false,"The request continues to the backend."),
+  C("the service reads the database and fills the cache for next time",true,"Miss → backend service → database → cache fill."),
+  C("the cache silently returns an empty home page",false,"That is the failure mode of a primary-store cache, not a lookaside one."),
+  C("the viewer is redirected to another region",false,"Regions do not fix a cache miss.")])
 ]
 };
 

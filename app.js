@@ -310,7 +310,7 @@ function renderHome(opt){
   var h=topBar()+noticeBar()+'<div class="wrap hero">'+
     '<div><span class="eyebrow">A system design course</span>'+
     '<h1>Learn how systems really work.</h1>'+
-    '<p>53 step-by-step lessons with quick-check quizzes, from a single request to whole systems — drawn as boxes and arrows.</p></div>'+
+    '<p>'+Object.keys(LESSONS).length+' step-by-step lessons with quick-check quizzes, from a single request to whole systems — drawn as boxes and arrows.</p></div>'+
     '<div class="progress"><div class="row"><span class="small">Your progress</span><b>'+dc+' / '+FLAT.length+' lessons</b></div>'+
     '<div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div></div>';
   if(nxt){
