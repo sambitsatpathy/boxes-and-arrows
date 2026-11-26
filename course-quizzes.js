@@ -397,6 +397,44 @@ var QUIZ_BANK={
   C("closer together",true,"Proximity becomes a prefix match."),
   C("in different time zones",false,"Unrelated."),
   C("exactly the same point",false,"A shared prefix means nearby, not identical.")])
+],
+
+/* ---------- Unit 13 · Build the Giants: Messaging ---------- */
+"whatsapp":[
+ Q("A message is stored before it is put on the sync queue. Why?",[
+  C("so the sender's ack can be sent sooner",false,"That is a useful side effect, not the reason."),
+  C("so no consumer sees a message the store does not have",true,"Publish only after the commit — the queue must never get ahead of the record."),
+  C("so the sequencing service can be skipped",false,"The ID is assigned before the write."),
+  C("so push notifications are guaranteed",false,"Push stays best-effort even with a durable queue.")]),
+ Q("Bob is offline when Alice sends. What happens to the message?",[
+  C("It is dropped and retried next time Bob opens the app",false,"It is never dropped — it is already in the store."),
+  C("It waits in Alice's phone until Bob is seen online",false,"A phone is an endpoint, not the authority."),
+  C("It stays in the store and Bob replays from the last ID he saw",true,"Push is a hint; the message log is the truth."),
+  C("The sequencer holds it for Bob's next socket",false,"The sequencer only assigns order.")])
+],
+"discord-messages":[
+ Q("Why move off Cassandra at trillion-message scale?",[
+  C("Cassandra could not store that many rows",false,"Capacity was not the wall — predictability was."),
+  C("Reads were costly, compaction and GC pauses hurt p99, and upkeep got expensive",true,"The LSM read path plus compaction, pauses and maintenance compounded."),
+  C("Cassandra lost the channel data model",false,"The compatible engine kept that model."),
+  C("MongoDB became cheaper again",false,"MongoDB was the store before Cassandra.")]),
+ Q("Why partition messages by channel and time bucket?",[
+  C("so each message can be indexed by its author",false,"That is not the hot read."),
+  C("so 'newest N in this channel' is one contiguous scan",true,"Key the store for the read you do most often."),
+  C("so the messages can be encrypted",false,"Encryption is independent of partitioning."),
+  C("so every read fans out across every bucket",false,"You want the opposite of that.")])
+],
+"slack-message":[
+ Q("Which server decides which Channel Server owns a channel?",[
+  C("WebApp",false,"WebApp is the client API."),
+  C("Admin Server, with consistent hashing on the channel ID",true,"Mapping channel IDs to owners is the Admin Server's job."),
+  C("Gateway Server",false,"Gateways hold device subscriptions, not channel ownership."),
+  C("Envoy",false,"Envoy is the edge proxy.")]),
+ Q("Why WebSocket rather than SSE for a chat client?",[
+  C("SSE cannot push from server to browser",false,"SSE does push — it is just one-way."),
+  C("WebSocket is full duplex, so both sides can send with low latency",true,"Chat needs replies and pushes over one cheap channel."),
+  C("WebSocket needs no connection upgrade",false,"It begins with an upgrade."),
+  C("SSE is not supported in browsers",false,"It is supported; the limitation is direction.")])
 ]
 };
 

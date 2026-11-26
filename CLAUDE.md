@@ -8,8 +8,8 @@ Boxes & Arrows is a static, no-backend, no-build course app for learning system 
 Everything runs in the browser: a home "course map" of units, and a step-by-step lesson
 walker where each step is a short walkthrough with a boxes-and-arrows SVG diagram. Units are
 gated by a **section exam** (pass at 70%) that unlocks the next unit. Progress is stored in
-`localStorage`. There is no server, no AI service, no bundler and no test suite. 53 lessons
-across 12 units.
+`localStorage`. There is no server, no AI service, no bundler and no test suite. 56 lessons
+across 13 units.
 
 ## Commands
 
@@ -26,7 +26,7 @@ preset "Other", no build command, output directory `.`. Any static host works.
 Syntax-check the scripts (no tests exist):
 
 ```sh
-node --check app.js && node --check course.js && node --check course-judgement.js && node --check course-enhance.js && node --check course-quizzes.js
+node --check app.js && node --check course.js && node --check course-judgement.js && node --check course-enhance.js && node --check course-unit13.js && node --check course-quizzes.js
 ```
 
 There is no lint or build step. Changes appear on a browser refresh. Asset URLs in
@@ -39,7 +39,7 @@ touched the repo — the cache-buster counter is shared.
 **Files and ownership**
 
 - `index.html` — page shell, SVG icon symbols, cache-busted `<script>`/`<link>` tags, noscript fallback.
-- `styles.css` — all styling (mobile-first, light/dark). Unit accents are CSS vars `--u1` … `--u12`,
+- `styles.css` — all styling (mobile-first, light/dark). Unit accents are CSS vars `--u1` … `--u13`,
   defined in the light `:root`, the `prefers-color-scheme:dark` block, and the
   `:root[data-theme="dark"]` block — update all three when adding a unit.
 - `course.js` — core course data as plain globals: `COURSE_UNITS` (9 units) and
@@ -48,13 +48,15 @@ touched the repo — the cache-buster counter is shared.
 - `course-judgement.js` — unit 10 (Design Judgement, 3 lessons). Pushes onto the same globals.
 - `course-enhance.js` — units 11–12 (Networking & the Edge; Patterns & Data Modelling, 10 lessons).
   Pushes onto the same globals.
+- `course-unit13.js` — unit 13 (Build the Giants: Messaging, 3 lessons / 41 steps). Pushes
+  onto the same globals. Each lesson credits its ByteByteGo guide URLs in a `.src` body line.
 - `course-quizzes.js` — the quiz bank as a plain global: `QUIZ_BANK`. Feeds the inline
   "Quick check" steps, the section exams (`examPool`) and Review mode.
 - `app.js` — the entire application in one IIFE. Reads `COURSE_UNITS` / `COURSE_LESSONS` / `QUIZ_BANK`.
 - `mascot-concepts.html` — standalone ideation page with animated mascot concepts; **not** loaded by the app.
 - `vercel.json` — static hosting + security headers (CSP). Keep changes CSP-compatible.
 
-**Script order matters:** `course.js` → `course-judgement.js` → `course-enhance.js` → `course-quizzes.js` → `app.js`.
+**Script order matters:** `course.js` → `course-judgement.js` → `course-enhance.js` → `course-unit13.js` → `course-quizzes.js` → `app.js`.
 The course files mutate the globals; `app.js` reads them at load. Adding a unit = push a unit
 object onto `COURSE_UNITS`, add its lessons to `COURSE_LESSONS`, define `--uN` in `styles.css`.
 
