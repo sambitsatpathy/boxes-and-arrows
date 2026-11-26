@@ -8,14 +8,13 @@ The app currently has 12 units / 53 lessons. Unit 9 (Whole Systems) only has a g
 
 - **A · Chat, messaging & notifications (WhatsApp)** — 8 guides
 - **B · Video, streaming & caching (YouTube / Netflix)** — 6 guides
-- **C · Feed, mail & social (Twitter / Gmail / Reddit)** — 6 guides (1 names to re-check)
-  - MISSING: how-does-we-design-a-permission-system.md
+- **C · Feed, mail & social (Twitter / Gmail / Reddit)** — 7 guides
 - **D · Mobility, travel & commerce (Uber / Airbnb / Amazon)** — 8 guides
 - **E · Search, maps, docs & Q&A (Google / Stack Overflow)** — 7 guides
 - **F · Payments & fintech** — 16 guides
 - **G · Other named products & systems** — 11 guides
 
-**Total named-system / product guides mapped: 62**
+**Total named-system / product guides mapped: 63**
 
 ## Proposed new app sections
 
@@ -61,6 +60,7 @@ Each lesson follows the existing step format: a walkthrough of the system's *sha
 - [Reddit's core architecture](https://github.com/ByteByteGoHq/system-design-101/blob/main/data/guides/reddit's-core-architecture.md) — `reddit's-core-architecture.md`
 - [Design gmail](https://github.com/ByteByteGoHq/system-design-101/blob/main/data/guides/design-gmail.md) — `design-gmail.md`
 - [How is email delivered](https://github.com/ByteByteGoHq/system-design-101/blob/main/data/guides/how-is-email-delivered.md) — `how-is-email-delivered.md`
+- [How do we design a permission system](https://github.com/ByteByteGoHq/system-design-101/blob/main/data/guides/how-do-we-design-a-permission-system.md) — `how-do-we-design-a-permission-system.md`
 
 ### D · Mobility, travel & commerce (Uber / Airbnb / Amazon)
 
