@@ -473,6 +473,44 @@ var QUIZ_BANK={
   C("the service reads the database and fills the cache for next time",true,"Miss → backend service → database → cache fill."),
   C("the cache silently returns an empty home page",false,"That is the failure mode of a primary-store cache, not a lookaside one."),
   C("the viewer is redirected to another region",false,"Regions do not fix a cache miss.")])
+],
+
+/* ---------- Unit 15 · Build the Giants: Social & Mail ---------- */
+"twitter-for-you":[
+ Q("Why cut roughly 500 million candidate tweets down to about 1,500 before ranking?",[
+  C("so the ranking model can see only posts from people you follow",false,"Follow graph is only one candidate source — the cut is about cost, not ownership."),
+  C("the expensive scorer can only afford a small pool, and cheap rules can remove obvious non-candidates first",true,"Global filtering throws away most of the pool so the neural ranker sees a manageable set."),
+  C("because a neural network cannot process more than 1,500 inputs at all",false,"The limit is a latency and cost choice, not a hard model limit."),
+  C("so that ads can be inserted before the tweets are scored",false,"Ads are injected at the final mixing stage, after ranking.")]),
+ Q("A ranked feed is dominated by the same author and the same story. Which stage should fix that?",[
+  C("candidate sourcing",false,"Sourcing adds choices; it does not remove repetition from the chosen set."),
+  C("feature hydration",false,"Hydration gathers signals for scoring; it does not enforce variety."),
+  C("diversity filtering, which caps repeated authors and near-duplicate content",true,"That is exactly the job of the second filtering stage."),
+  C("global filtering",false,"Global filtering happens before ranking and checks eligibility, not variety.")])
+],
+"design-gmail":[
+ Q("Alice sends a message to Bob's Gmail address. How does Bob's client normally read it?",[
+  C("SMTP pushes it from Gmail straight onto Bob's screen",false,"SMTP moves mail between servers; clients retrieve it another way."),
+  C("through IMAP or POP3, pulling from the mailbox stored on Gmail's servers",true,"Retrieval is a pull from a mailbox that has already been filled."),
+  C("by querying DNS MX records each time it opens",false,"MX records tell senders where to deliver, not recipients how to read."),
+  C("the message waits in Alice's client until Bob comes online",false,"The sender's server accepts and stores it; Alice can go offline.")]),
+ Q("The next mail server is down for an hour. What should the sending MTA do?",[
+  C("drop the message and ask Alice to send it again",false,"A mail server queues and retries rather than discarding accepted mail."),
+  C("deliver it to a CDN edge instead",false,"CDNs are not part of the SMTP relay path here."),
+  C("hold it in a durable queue and retry until it can be accepted",true,"Store-and-forward makes an outage a delay, not a loss."),
+  C("forward it to Bob's phone directly over IMAP",false,"IMAP is a retrieval protocol to a client, not a relay mechanism.")])
+],
+"reddit-architecture":[
+ Q("Why are votes and link submissions sent through RabbitMQ instead of being handled inline?",[
+  C("so the request returns quickly and workers can absorb bursts and retry expensive work",true,"The guide describes expensive operations being deferred to async job workers."),
+  C("because Postgres cannot store votes at all",false,"Postgres is Reddit's core data store; the queue is about load and latency."),
+  C("so that Fastly can cache the vote response at the edge",false,"A CDN caches reads, not user writes."),
+  C("because GraphQL Federation requires a message queue",false,"Federation and the write path are independent choices.")]),
+ Q("What problem does Debezium's change data capture solve in Reddit's stack?",[
+  C("it replaces Postgres with Cassandra for core entities",false,"The two stores coexist for different workloads."),
+  C("it compresses memcached entries so more fit in memory",false,"Compression is not what CDC is for."),
+  C("it streams database changes so caches and replicas stay consistent after a write",true,"CDC publishes changes from the source database instead of relying on multiple coordinated writes."),
+  C("it authenticates GraphQL queries from mobile apps",false,"Authentication is not the role of CDC.")])
 ]
 };
 
